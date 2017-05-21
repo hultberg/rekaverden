@@ -1,0 +1,55 @@
+name: Reke
+main: net.mittnett.reke.Rekeverden.Rekeverden
+version: 1.2.1
+description: rekeverden
+authors: ['Thypthon']
+
+commands:
+  spawn:
+    description: Teleport to current world's spawn
+    usage: /<command>
+
+  home:
+    description: Go to a home
+    usage: /<command> [name]
+
+  sethome:
+    description: Set a home at location
+    usage: /<command> [name]
+
+  delhome:
+    description: Delete a home
+    usage: /<command> [name]
+
+  listhome:
+    description: List all homes
+    usage: /<command>
+    aliases: [ homes, listhomes ]
+
+  i:
+    description: Give yourself item
+    usage: /<command> [materialName] (amount) (damage)
+
+  tid:
+    description: Set your own time.
+    usage: /<command> [day/night/reset/set] (int)
+
+  setspawn:
+    description: Set a new spawnpoint of current world
+    usage: /<command>
+
+  eject:
+    description: Eject / Discmount from an entity
+    usage: /<command>
+
+  toggleselect:
+    description: Toggle the select tool and this command is only for mods and admins.
+    usage: /<command>
+
+  protect:
+    description: Protected a selected area
+    usage: /<command> (playerName)
+
+  gr:
+    description: Group system
+    usage: /<command>  ...
