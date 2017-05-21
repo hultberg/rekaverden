@@ -61,7 +61,6 @@ public class PlayerListener implements org.bukkit.event.Listener {
     public void onPlayerQuit(PlayerQuitEvent event) {
         event.setQuitMessage(null);
 
-
         if (event.getPlayer() != null) {
             this.plugin.getUserHandler().logoutPlayer(event.getPlayer());
         }
@@ -91,53 +90,14 @@ public class PlayerListener implements org.bukkit.event.Listener {
     }
 
     private void handleRightClickBlock(PlayerInteractEvent event) {
-
-        if (event.getClickedBlock() != null) {
-            Player player = event.getPlayer();
-            Block clickedBlock = event.getClickedBlock();
-            User user = this.plugin.getUserHandler().getUser(player.getUniqueId());
-
-            switch (clickedBlock.getType()) {
-                case CHEST:
-                case FURNACE:
-                case BURNING_FURNACE:
-                    User owner = this.plugin.getBlockProtectionHandler().getOwnerUser(clickedBlock.getLocation());
-                    if (owner == null) {
-                        player.sendMessage(ChatColor.RED + "This chest/furnace does not have an owner, please contact an admin!");
-                        event.setCancelled(true);
-                        event.setUseInteractedBlock(Event.Result.DENY);
-                    } else {
-                        Sign privateSign = getPrivateSignOfChest(clickedBlock);
-                        if (privateSign != null) {
-                            User ownerOfSign = this.plugin.getBlockProtectionHandler().getOwnerUser(privateSign.getLocation());
-                            if ((ownerOfSign != null) && (ownerOfSign.equals(owner)) && (!owner.equals(user))) {
-                                player.sendMessage(ChatColor.RED + "This chest/furnace is private, you can not open it.");
-                                event.setCancelled(true);
-                                event.setUseInteractedBlock(Event.Result.DENY);
-                            }
-                        } else if ((user.equals(owner) == false) && (owner.sharesAGroup(user) == false)) {
-                            player.sendMessage(ChatColor.RED + "User " + ChatColor.WHITE + owner.getName() + ChatColor.RED + " owns this chest/furnance.");
-                            event.setCancelled(true);
-                            event.setUseInteractedBlock(Event.Result.DENY);
-                        }
-                    }
-
-                    return;
-                    
-                default:
-                	break;
-            }
-        }
+        Player player = event.getPlayer();
+        Block clickedBlock = event.getClickedBlock();
+        User user = this.plugin.getUserHandler().getUser(player.getUniqueId());
         
         if (event.getItem() != null) {
-            Player player = event.getPlayer();
-            Block clickedBlock = event.getClickedBlock();
-            User user = this.plugin.getUserHandler().getUser(player.getUniqueId());
-            
 	        switch (event.getItem().getType()) {
-
 	            case BOOK:
-	                if (user.hasEnabledSelectTool()) {
+	                if (user.hasEnabledSelectTool() && clickedBlock != null) {
 	                    Location l = clickedBlock.getLocation();
 	                    user.setSelectToolPoint2(l);
 	
@@ -184,6 +144,39 @@ public class PlayerListener implements org.bukkit.event.Listener {
 	            	break;
 
 	        }
+        }
+        
+        if (event.getClickedBlock() != null) {
+            switch (clickedBlock.getType()) {
+                case CHEST:
+                case FURNACE:
+                case BURNING_FURNACE:
+                    User owner = this.plugin.getBlockProtectionHandler().getOwnerUser(clickedBlock.getLocation());
+                    if (owner == null) {
+                        player.sendMessage(ChatColor.RED + "This chest/furnace does not have an owner, please contact an admin!");
+                        event.setCancelled(true);
+                        event.setUseInteractedBlock(Event.Result.DENY);
+                    } else {
+                        Sign privateSign = getPrivateSignOfChest(clickedBlock);
+                        if (privateSign != null) {
+                            User ownerOfSign = this.plugin.getBlockProtectionHandler().getOwnerUser(privateSign.getLocation());
+                            if ((ownerOfSign != null) && (ownerOfSign.equals(owner)) && (!owner.equals(user))) {
+                                player.sendMessage(ChatColor.RED + "This chest/furnace is private, you can not open it.");
+                                event.setCancelled(true);
+                                event.setUseInteractedBlock(Event.Result.DENY);
+                            }
+                        } else if ((user.equals(owner) == false) && (owner.sharesAGroup(user) == false)) {
+                            player.sendMessage(ChatColor.RED + "User " + ChatColor.WHITE + owner.getName() + ChatColor.RED + " owns this chest/furnance.");
+                            event.setCancelled(true);
+                            event.setUseInteractedBlock(Event.Result.DENY);
+                        }
+                    }
+
+                    return;
+                    
+                default:
+                	break;
+            }
         }
     }
 
