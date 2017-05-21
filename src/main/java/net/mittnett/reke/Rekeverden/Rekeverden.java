@@ -78,11 +78,7 @@ public class Rekeverden extends JavaPlugin {
     }
 
     public void onDisable() {
-        this.userHomeHandler.onDisable();
-        this.blockInfoHandler.onDisable();
-        this.bpHandler.onDisable();
-        this.groupHandler.onDisable();
-        this.userHandler.onDisable();
+        this.disableHandlers();
 
         if (this.sqlc != null) {
             getLogger().info(" - Closing SQL connection...");
@@ -90,6 +86,15 @@ public class Rekeverden extends JavaPlugin {
         }
 
         this.log.info("[Rekeverden] plugin is shutting down...");
+    }
+    
+    public void disableHandlers()
+    {
+        if (this.userHomeHandler != null)   { this.userHomeHandler.onDisable(); }
+        if (this.blockInfoHandler != null)  { this.blockInfoHandler.onDisable(); }
+        if (this.bpHandler != null)         { this.bpHandler.onDisable(); }
+        if (this.groupHandler != null)      { this.groupHandler.onDisable(); }
+        if (this.userHandler != null)       { this.userHandler.onDisable(); }
     }
 
     public static Rekeverden getInstance() {
