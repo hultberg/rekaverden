@@ -125,7 +125,7 @@ public class PlayerListener implements org.bukkit.event.Listener {
                     return;
                     
                 default:
-                	return;
+                	break;
             }
         }
         
@@ -181,7 +181,7 @@ public class PlayerListener implements org.bukkit.event.Listener {
 	                return;
 	               
 	            default:
-	            	return;
+	            	break;
 
 	        }
         }
