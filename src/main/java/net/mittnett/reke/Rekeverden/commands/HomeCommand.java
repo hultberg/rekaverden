@@ -90,7 +90,7 @@ public class HomeCommand implements CommandExecutor {
 
                 // If no args are provided, teleport to primary home if any.
                 if (args.length == 0) {
-                    player.sendMessage(ChatColor.RED + "You have no homes.");
+                    player.sendMessage(ChatColor.RED + "Please provide the name of a home too teleport to.");
                 } else if (args.length > 0) {
                     // Find the one with the name provided
                     String theName = args[0];
@@ -99,7 +99,7 @@ public class HomeCommand implements CommandExecutor {
                     if ((homes1.isEmpty() == false) && (homes1.containsKey(theName) == true)) {
                         player.teleport(homes1.get(theName).getLocation());
                     } else {
-                        player.sendMessage(ChatColor.RED + "Home by name " + ChatColor.WHITE + theName + ChatColor.RED + ".");
+                        player.sendMessage(ChatColor.RED + "Home by name " + ChatColor.WHITE + theName + ChatColor.RED + " do not exists.");
                     }
                 }
 
