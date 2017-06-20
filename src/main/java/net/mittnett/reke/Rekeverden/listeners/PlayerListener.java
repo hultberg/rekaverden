@@ -114,7 +114,7 @@ public class PlayerListener implements org.bukkit.event.Listener {
           return;
 
         case WATCH:
-          if (user.getAccessLevel() > 2) {
+          if (user.hasAccessLevel(User.MODERATOR)) {
             player.sendMessage(ChatColor.BLUE + "--------- BlockBP ---------");
 
             ArrayList<String> rows = this.plugin.getBlockInfoHandler().getBlockLog(clickedBlock.getLocation());
@@ -135,7 +135,7 @@ public class PlayerListener implements org.bukkit.event.Listener {
           return;
 
         case STICK:
-          if (user.getAccessLevel() > 2) {
+          if (user.hasAccessLevel(User.MODERATOR)) {
             Location l = clickedBlock.getLocation();
             this.plugin.getBlockProtectionHandler().unProtect(l.getBlockX(), l.getBlockY(), l.getBlockZ(),
               l.getWorld().getName());
@@ -155,9 +155,8 @@ public class PlayerListener implements org.bukkit.event.Listener {
         case CHEST:
         case FURNACE:
         case BURNING_FURNACE:
-          if (user.getAccessLevel() ==)
-
-            User owner = this.plugin.getBlockProtectionHandler().getOwnerUser(clickedBlock.getLocation());
+          User owner = this.plugin.getBlockProtectionHandler().getOwnerUser(clickedBlock.getLocation());
+          
           if (owner == null) {
             player.sendMessage(ChatColor.RED + "This chest/furnace does not have an owner, please contact an admin!");
             event.setCancelled(true);

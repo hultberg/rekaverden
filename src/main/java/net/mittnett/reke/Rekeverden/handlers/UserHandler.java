@@ -1,7 +1,6 @@
 package net.mittnett.reke.Rekeverden.handlers;
 
 import net.mittnett.reke.Rekeverden.Rekeverden;
-import net.mittnett.reke.Rekeverden.handlers.AccessLevel;
 
 import org.bukkit.ChatColor;
 import org.bukkit.entity.Player;
@@ -427,18 +426,18 @@ public class UserHandler implements Handler {
     String prefix = "";
 
     switch (user.getAccessLevel()) {
-      case 0:
+      case User.GUEST:
         color = ChatColor.GRAY;
         prefix = "";
         break;
-      case 1:
+      case User.BUILDER:
         color = ChatColor.WHITE;
         break;
-      case 3:
+      case User.MODERATOR:
         color = ChatColor.GREEN;
         prefix = "";
         break;
-      case 4:
+      case User.ADMIN:
         color = ChatColor.RED;
         prefix = "";
     }

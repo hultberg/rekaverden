@@ -10,6 +10,11 @@ import org.bukkit.Material;
 import org.bukkit.block.Block;
 
 public class User {
+  public static final int GUEST = 0;
+  public static final int BUILDER = 1;
+  public static final int MODERATOR = 3;
+  public static final int ADMIN = 4;
+
   private final int id;
   private final UUID uuid;
   private final String name;
@@ -46,8 +51,28 @@ public class User {
     return this.name;
   }
 
+  /**
+   * Provides the access level of this user. Use the final ints in this class instead of direct integers when comparing.
+   *
+   * 0 => Guest
+   * 1 => Builder
+   * 2 => (not in use)
+   * 3 => Moderator
+   * 4 => Admin
+   *
+   * @return int
+   */
   public int getAccessLevel() {
     return this.accessLevel;
+  }
+
+  /**
+   * Determine if this user has the provided access.
+   * @param level int
+   * @return boolean
+   */
+  public boolean hasAccessLevel(int level) {
+    return this.accessLevel >= level;
   }
 
   public boolean hasEnabledSelectTool() {
