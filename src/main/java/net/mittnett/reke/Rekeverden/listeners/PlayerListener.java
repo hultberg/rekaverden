@@ -155,6 +155,7 @@ public class PlayerListener implements org.bukkit.event.Listener {
         case CHEST:
         case FURNACE:
         case BURNING_FURNACE:
+        case ENDER_CHEST:
           // Allow admins and mods to open all chests and furnaces
           if (user.hasAccessLevel(User.MODERATOR)) {
             break;
