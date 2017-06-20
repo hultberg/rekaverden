@@ -155,8 +155,13 @@ public class PlayerListener implements org.bukkit.event.Listener {
         case CHEST:
         case FURNACE:
         case BURNING_FURNACE:
+          // Allow admins and mods to open all chests and furnaces
+          if (user.hasAccessLevel(User.MODERATOR)) {
+            break;
+          }
+
           User owner = this.plugin.getBlockProtectionHandler().getOwnerUser(clickedBlock.getLocation());
-          
+
           if (owner == null) {
             player.sendMessage(ChatColor.RED + "This chest/furnace does not have an owner, please contact an admin!");
             event.setCancelled(true);
@@ -177,8 +182,7 @@ public class PlayerListener implements org.bukkit.event.Listener {
               event.setUseInteractedBlock(Event.Result.DENY);
             }
           }
-
-          return;
+          break;
 
         default:
           break;
