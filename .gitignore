@@ -1,4 +1,6 @@
 .idea/
+/server/
+/buildtools/
 rekaverden2.iml
 .DS_Store
 Rekeverden.iml
