@@ -1,5 +1,10 @@
 # Changelog
 
+### 1.2.6
+
+* Return minecart and remove when player exists it.
+* Add access check for /i command.
+
 ### 1.2.5
 
 * Added User.hasAccessLevel
