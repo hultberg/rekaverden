@@ -8,6 +8,7 @@ import net.mittnett.reke.Rekeverden.config.Configuration;
 import net.mittnett.reke.Rekeverden.commands.*;
 import net.mittnett.reke.Rekeverden.handlers.*;
 import net.mittnett.reke.Rekeverden.listeners.BlockListener;
+import net.mittnett.reke.Rekeverden.listeners.VehicleListener;
 import net.mittnett.reke.Rekeverden.mysql.MySQLConnectionPool;
 import net.mittnett.reke.Rekeverden.mysql.MySQLHandler;
 import org.bukkit.plugin.PluginManager;
@@ -31,11 +32,11 @@ public class Rekeverden extends JavaPlugin {
 
     public void onEnable() {
         instance = this;
-        
+
         this.config = new Configuration(this);
         this.config.addDefaults();
         this.config.save();
-        
+
         this.log = getLogger();
         this.log.info("[Rekeverden] plugin is starting...");
 
@@ -72,6 +73,7 @@ public class Rekeverden extends JavaPlugin {
         PluginManager pm = getServer().getPluginManager();
         pm.registerEvents(new net.mittnett.reke.Rekeverden.listeners.PlayerListener(this), this);
         pm.registerEvents(new BlockListener(this), this);
+        pm.registerEvents(new VehicleListener(), this);
         pm.registerEvents(new net.mittnett.reke.Rekeverden.listeners.EntityListener(), this);
 
         this.log.info("[Rekeverden] Ready");
@@ -87,7 +89,7 @@ public class Rekeverden extends JavaPlugin {
 
         this.log.info("[Rekeverden] plugin is shutting down...");
     }
-    
+
     public void disableHandlers()
     {
         if (this.userHomeHandler != null)   { this.userHomeHandler.onDisable(); }
