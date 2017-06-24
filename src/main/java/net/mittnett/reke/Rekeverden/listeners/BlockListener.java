@@ -162,7 +162,7 @@ public class BlockListener implements org.bukkit.event.Listener {
                 case RED_ROSE:
                 case YELLOW_FLOWER:
                     User ownerOfUp = this.bpHandler.getOwnerUser(blockOver.getLocation());
-                    if ((!user.equals(ownerOfUp)) && (!user.sharesAGroup(ownerOfUp))) {
+                    if ((ownerOfUp != null) && (!user.equals(ownerOfUp)) && (!user.sharesAGroup(ownerOfUp))) {
                         player.sendMessage(ChatColor.RED + "The block over this block is owned by " + ChatColor.WHITE + ownerOfUp.getName() + ChatColor.RED + ".");
                         player.sendMessage(ChatColor.RED + "If you are sharing the blocks you must be a member of the same group. See /gr for information of how");
                         player.sendMessage(ChatColor.RED + "to create a group or invite a user.");
