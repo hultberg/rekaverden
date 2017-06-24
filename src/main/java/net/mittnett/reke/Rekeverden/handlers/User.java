@@ -234,6 +234,6 @@ public class User {
   }
 
   public boolean equals(User user) {
-    return user.getId() == getId();
+    return user != null && user.getId() == this.getId();
   }
 }
