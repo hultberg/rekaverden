@@ -4,6 +4,7 @@
 
 * Return minecart and remove when player exists it.
 * Add access check for /i command.
+* Fix NullPointerException when checking for block owner
 
 ### 1.2.5
 
