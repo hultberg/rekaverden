@@ -67,7 +67,7 @@ public class Rekeverden extends JavaPlugin {
         getCommand("gr").setExecutor(new net.mittnett.reke.Rekeverden.commands.GroupCommand(this));
         getCommand("tid").setExecutor(new TimeCommand());
         getCommand("eject").setExecutor(new EjectCommand());
-        getCommand("i").setExecutor(new net.mittnett.reke.Rekeverden.commands.CustomGiveCommand());
+        getCommand("i").setExecutor(new CustomGiveCommand(this.userHandler));
 
         PluginManager pm = getServer().getPluginManager();
         pm.registerEvents(new net.mittnett.reke.Rekeverden.listeners.PlayerListener(this), this);

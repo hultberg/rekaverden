@@ -7,8 +7,16 @@ import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
+import net.mittnett.reke.Rekeverden.handlers.User;
+import net.mittnett.reke.Rekeverden.handlers.UserHandler;
 
 public class CustomGiveCommand implements CommandExecutor {
+  private UserHandler userHandler;
+
+  public CustomGiveCommand(UserHandler userHandler) {
+    this.userHandler = userHandler;
+  }
+
   public boolean onCommand(CommandSender commandSender, Command command, String label, String[] args) {
     if (!(commandSender instanceof Player)) {
       commandSender.sendMessage("This command can only be used by Players");
@@ -16,6 +24,12 @@ public class CustomGiveCommand implements CommandExecutor {
     }
 
     Player player = (Player) commandSender;
+    User user = this.userHandler.getUser(player.getUniqueId());
+
+    if (!user.hasAccessLevel(User.MODERATOR)) {
+      player.sendMessage(ChatColor.RED + "Permission denied.");
+      return true;
+    }
 
     if (args.length == 0) {
       return false;
