@@ -1,5 +1,13 @@
 # Changelog
 
+### 1.2.5
+
+* Added User.hasAccessLevel
+* Added constants for access levels
+* Refactored some access level checks
+* Change entity explode event listener to only cancel event when creepers explode
+* Disallow users from placing TNT.
+
 ### 1.2.3
 
 * Fixed home command to respond with "Please provide the name of the home."
