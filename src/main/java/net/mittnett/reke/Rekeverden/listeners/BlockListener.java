@@ -37,8 +37,13 @@ public class BlockListener implements org.bukkit.event.Listener {
         Location l = block.getLocation();
         Player player = event.getPlayer();
 
-
         User user = this.userHandler.getUser(player.getUniqueId());
+
+        if (block.getType() == Material.TNT && !user.hasAccessLevel(User.MODERATOR)) {
+          event.setCancelled(true);
+          return;
+        }
+
         Object localObject;
         String s;
         if ((block.getType() == Material.SPONGE) && (user.getAccessLevel() > 2)) {
@@ -179,11 +184,11 @@ public class BlockListener implements org.bukkit.event.Listener {
                 event.setCancelled(true);
                 return;
             }
-            
+
         	// Remove protection of this block.
             this.plugin.getBlockProtectionHandler().unProtect(l.getBlockX(), l.getBlockY(), l.getBlockZ(), l.getWorld().getName());
         }
-        
+
 
         // Log removal of this block.
         this.plugin.getBlockInfoHandler().log(user
