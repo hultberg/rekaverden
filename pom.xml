@@ -3,7 +3,7 @@
 
   <groupId>net.mittnett.reke</groupId>
   <artifactId>Rekeverden</artifactId>
-  <version>1.2.5</version>
+  <version>1.2.6</version>
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
