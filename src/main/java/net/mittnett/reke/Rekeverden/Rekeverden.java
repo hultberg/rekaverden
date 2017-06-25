@@ -4,12 +4,12 @@ import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.logging.Logger;
 
+import com.lambdaworks.redis.api.StatefulRedisConnection;
 import net.mittnett.reke.Rekeverden.config.Configuration;
 import net.mittnett.reke.Rekeverden.commands.*;
 import net.mittnett.reke.Rekeverden.handlers.*;
 import net.mittnett.reke.Rekeverden.listeners.BlockListener;
 import net.mittnett.reke.Rekeverden.listeners.VehicleListener;
-import net.mittnett.reke.Rekeverden.mysql.MySQLConnectionPool;
 import net.mittnett.reke.Rekeverden.mysql.MySQLHandler;
 import org.bukkit.plugin.PluginManager;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -19,10 +19,8 @@ public class Rekeverden extends JavaPlugin {
     private static Rekeverden instance;
     public static boolean isAreaProtectorRunning = false;
 
-    private boolean sqlConnected;
-
     private final MySQLHandler sqlHandler = new MySQLHandler(this);
-    private MySQLConnectionPool sqlc;
+    private DatabaseHandler dbHandler;
     private Configuration config;
     private UserHandler userHandler;
     private GroupHandler groupHandler;
@@ -40,16 +38,20 @@ public class Rekeverden extends JavaPlugin {
         this.log = getLogger();
         this.log.info("[Rekeverden] plugin is starting...");
 
-        getLogger().info(" - Connecting to SQL server...");
-        if (!sqlConnection()) {
-            return;
+        this.log.info(" - Connecting to SQL server...");
+        this.dbHandler = new DatabaseHandler(this.log, this.config);
+
+        if (!this.dbHandler.createConnection()) {
+          this.log.severe("Could not connect to SQL server!");
+          this.getServer().shutdown();
+          return;
         }
 
         this.userHandler = new UserHandler(this);
         this.groupHandler = new GroupHandler(this);
-        this.bpHandler = new BlockProtectionHandler(this);
-        this.blockInfoHandler = new BlockInfoHandler(this);
-        this.userHomeHandler = new UserHomeHandler(this);
+        this.bpHandler = new BlockProtectionHandler(this.dbHandler, this.userHandler, this.log);
+        this.blockInfoHandler = new BlockInfoHandler(this.dbHandler, this.userHandler, this.log);
+        this.userHomeHandler = new UserHomeHandler(this.dbHandler);
 
         this.userHandler.onEnable();
         this.groupHandler.onEnable();
@@ -81,12 +83,6 @@ public class Rekeverden extends JavaPlugin {
 
     public void onDisable() {
         this.disableHandlers();
-
-        if (this.sqlc != null) {
-            getLogger().info(" - Closing SQL connection...");
-            this.sqlc.close();
-        }
-
         this.log.info("[Rekeverden] plugin is shutting down...");
     }
 
@@ -97,57 +93,18 @@ public class Rekeverden extends JavaPlugin {
         if (this.bpHandler != null)         { this.bpHandler.onDisable(); }
         if (this.groupHandler != null)      { this.groupHandler.onDisable(); }
         if (this.userHandler != null)       { this.userHandler.onDisable(); }
+        if (this.dbHandler != null)         { this.dbHandler.onDisable(); }
     }
 
     public static Rekeverden getInstance() {
         return instance;
     }
 
-    public boolean sqlConnection() {
-        try {
-            this.sqlc = new MySQLConnectionPool(
-                this.config.getDatabaseHost(),
-                this.config.getDatabaseName(),
-                this.config.getDatabaseUser(),
-                this.config.getDatabasePass(),
-                this.config.getDatabasePort()
-            );
-
-            Connection conn = getConnection();
-            if (conn == null) {
-                getLogger().severe("Could not connect to SQL server!");
-                getServer().shutdown();
-
-                return false;
-            }
-
-            conn.close();
-            this.sqlConnected = true;
-        } catch (SQLException e) {
-            e.printStackTrace();
-        } catch (ClassNotFoundException e) {
-            e.printStackTrace();
-        }
-
-        return this.sqlConnected;
-    }
-
+    /**
+     * @deprecated
+     */
     public Connection getConnection() {
-        try {
-            Connection conn = this.sqlc.getConnection();
-
-            if ((!this.sqlConnected) && (conn != null)) {
-                getLogger().info("SQL connection re-established.");
-                this.sqlConnected = true;
-            }
-
-            return conn;
-        } catch (Exception e) {
-            this.sqlConnected = false;
-
-            getLogger().severe("Could not fetch SQL connection! " + e.getMessage());
-        }
-        return null;
+      return this.dbHandler.getConnection();
     }
 
     public BlockProtectionHandler getBlockProtectionHandler() {

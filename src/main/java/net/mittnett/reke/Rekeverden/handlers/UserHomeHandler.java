@@ -12,11 +12,11 @@ import java.sql.SQLException;
 import java.util.HashMap;
 
 public class UserHomeHandler implements Handler {
-    protected Rekeverden plugin;
+    protected DatabaseHandler databaseHandler;
 
-    public UserHomeHandler(Rekeverden plugin)
+    public UserHomeHandler(DatabaseHandler databaseHandler)
     {
-        this.plugin = plugin;
+        this.databaseHandler = databaseHandler;
     }
 
     @Override
@@ -36,13 +36,12 @@ public class UserHomeHandler implements Handler {
 
     public boolean createHome(String name, User owner, Location location, World world, boolean primary)
     {
-        Connection conn = null;
+        Connection conn = this.databaseHandler.getConnection();
         PreparedStatement ps = null;
 
         boolean result = false;
 
         try {
-            conn = this.plugin.getConnection();
             ps = conn.prepareStatement("INSERT INTO r_waypoints(name,owner,enabled,type,data,x,y,z,f,world)VALUES(?, ?, 1, 1, ?, ?, ?, ?, ?, ?)");
             ps.setString(1, name);
             ps.setInt(2, owner.getId());
@@ -61,9 +60,6 @@ public class UserHomeHandler implements Handler {
                 if (ps != null) {
                     ps.close();
                 }
-                if (conn != null) {
-                    conn.close();
-                }
             } catch (SQLException e) {
                 e.printStackTrace();
             }
@@ -74,12 +70,11 @@ public class UserHomeHandler implements Handler {
 
     public boolean deleteHome(String name, User owner)
     {
-        Connection conn = null;
+        Connection conn = this.databaseHandler.getConnection();
         PreparedStatement ps = null;
         boolean result = false;
 
         try {
-            conn = this.plugin.getConnection();
             ps = conn.prepareStatement("DELETE FROM r_waypoints WHERE (name LIKE ? AND owner = ? AND type = 1)");
             ps.setString(1, name);
             ps.setInt(2, owner.getId());
@@ -92,9 +87,6 @@ public class UserHomeHandler implements Handler {
                 if (ps != null) {
                     ps.close();
                 }
-                if (conn != null) {
-                    conn.close();
-                }
             } catch (SQLException e) {
                 e.printStackTrace();
             }
@@ -105,13 +97,12 @@ public class UserHomeHandler implements Handler {
 
     public HashMap<String, HomeWaypoint> getUserHomes(User owner)
     {
-        Connection conn = null;
+        Connection conn = this.databaseHandler.getConnection();
         PreparedStatement ps = null;
         ResultSet rs = null;
         HashMap<String, HomeWaypoint> homes = new HashMap<String, HomeWaypoint>();
 
         try {
-            conn = this.plugin.getConnection();
             ps = conn.prepareStatement("SELECT id,name,owner,enabled,type,data,x,y,z,f,world FROM r_waypoints WHERE (owner = ? AND type = 1 AND data != 1)");
             ps.setInt(1, owner.getId());
             rs = ps.executeQuery();
@@ -132,9 +123,6 @@ public class UserHomeHandler implements Handler {
                 }
                 if (rs != null) {
                     rs.close();
-                }
-                if (conn != null) {
-                    conn.close();
                 }
             } catch (SQLException e) {
                 e.printStackTrace();

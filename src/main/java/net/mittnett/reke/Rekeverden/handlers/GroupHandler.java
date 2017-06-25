@@ -10,22 +10,25 @@ import java.sql.SQLException;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.logging.Level;
+import java.util.logging.Logger;
 
 public class GroupHandler implements Handler {
-    private Rekeverden plugin;
+    private DatabaseHandler databaseHandler;
+    private UserHandler userHandler;
+    private Logger logger;
     private Set<Group> groupCache;
     private Set<GroupInvite> groupInviteCache;
 
-    public GroupHandler(Rekeverden plugin) {
-        this.plugin = plugin;
+    public GroupHandler(DatabaseHandler databaseHandler, UserHandler userHandler, Logger logger) {
+        this.databaseHandler = databaseHandler;
+        this.userHandler = userHandler;
+        this.logger = logger;
         this.groupCache = new java.util.HashSet();
         this.groupInviteCache = new java.util.HashSet();
     }
 
-
     public void onEnable() {
     }
-
 
     public void onDisable() {
         this.groupCache.clear();
@@ -37,16 +40,13 @@ public class GroupHandler implements Handler {
         this.groupInviteCache.remove(gi);
     }
 
-
     public void removeGroupCache(Group g) {
         this.groupCache.remove(g);
     }
 
-
     public Group getGroup(int gID) {
         return getGroup(gID, false);
     }
-
 
     public Group getGroup(int gID, boolean refreshCache) {
         if ((!refreshCache) && (this.groupCache.size() > 0)) {
@@ -57,12 +57,11 @@ public class GroupHandler implements Handler {
             }
         }
 
-        Connection conn = null;
+        Connection conn = this.databaseHandler.getConnection();
         PreparedStatement ps = null;
         ResultSet rs = null;
         Group group = null;
         try {
-            conn = this.plugin.getConnection();
             ps = conn.prepareStatement("SELECT `group_ID`, `name`, `owner` FROM `r_groups` WHERE `group_ID` = ?");
             ps.setInt(1, gID);
 
@@ -71,7 +70,6 @@ public class GroupHandler implements Handler {
                 group = new Group(rs.getInt(1), rs.getString(2), this.plugin.getUserHandler().getUser(rs.getInt(3)));
             }
 
-
             try {
                 if (ps != null) {
                     ps.close();
@@ -79,14 +77,11 @@ public class GroupHandler implements Handler {
                 if (rs != null) {
                     rs.close();
                 }
-                if (conn != null) {
-                    conn.close();
-                }
             } catch (SQLException ex) {
-                this.plugin.getLogger().log(Level.SEVERE, "[Rekeverden] SQL Exception (under lukking)", ex);
+                this.logger.log(Level.SEVERE, "[Rekeverden] SQL Exception (under lukking)", ex);
             }
         } catch (SQLException e) {
-            this.plugin.getLogger().log(Level.SEVERE, "[Rekeverden] SQL Exception while getting a group.", e);
+            this.logger.log(Level.SEVERE, "[Rekeverden] SQL Exception while getting a group.", e);
         } finally {
             try {
                 if (ps != null) {
@@ -95,11 +90,8 @@ public class GroupHandler implements Handler {
                 if (rs != null) {
                     rs.close();
                 }
-                if (conn != null) {
-                    conn.close();
-                }
             } catch (SQLException ex) {
-                this.plugin.getLogger().log(Level.SEVERE, "[Rekeverden] SQL Exception (under lukking)", ex);
+                this.logger.log(Level.SEVERE, "[Rekeverden] SQL Exception (under lukking)", ex);
             }
         }
 
@@ -114,20 +106,18 @@ public class GroupHandler implements Handler {
     }
 
     private void fillMembersGroup(Group group) {
-        Connection conn = null;
+        Connection conn = this.databaseHandler.getConnection();
         PreparedStatement ps = null;
         ResultSet rs = null;
         try {
-            conn = this.plugin.getConnection();
             ps = conn.prepareStatement("SELECT `user_ID` FROM `r_group_membership` WHERE `group_ID` = ?");
             ps.setInt(1, group.getGroupID());
 
             rs = ps.executeQuery();
             while (rs.next())
-                group.addMember(this.plugin.getUserHandler().getUser(rs.getInt(1)));
-            return;
+                group.addMember(this.userHandler.getUser(rs.getInt(1)));
         } catch (SQLException e) {
-            this.plugin.getLogger().log(Level.SEVERE, "[Rekeverden] SQL Exception while getting group memberships.", e);
+            this.logger.log(Level.SEVERE, "[Rekeverden] SQL Exception while getting group memberships.", e);
         } finally {
             try {
                 if (ps != null) {
@@ -136,23 +126,23 @@ public class GroupHandler implements Handler {
                 if (rs != null) {
                     rs.close();
                 }
-                if (conn != null) {
-                    conn.close();
-                }
             } catch (SQLException ex) {
-                this.plugin.getLogger().log(Level.SEVERE, "[Rekeverden] SQL Exception (under lukking)", ex);
+                this.logger.log(Level.SEVERE, "[Rekeverden] SQL Exception (under lukking)", ex);
             }
         }
     }
 
 
-    public Group createGroup(String name, User creator)
-            throws Exception {
+    public Group createGroup(String name, User creator) throws Exception {
         if (name.trim().length() < 1) {
             throw new Exception("Name is required to create a group.");
         }
 
-        int newGroupID = this.plugin.getMySQLHandler().insert("INSERT INTO `r_groups` (`name`, `owner`) VALUES ('" + name + "', " + creator.getId() + ")");
+        PreparedStatement ps = this.databaseHandler.getConnection().prepareStatement("INSERT INTO `r_groups` (`name`, `owner`) VALUES ('?', ?)");
+        ps.setString(1, name);
+        ps.setInt(2, creator.getId());
+
+        int newGroupID = this.databaseHandler.insert(ps);
         if (newGroupID < 1) {
             throw new Exception("Failed to create the group, please contact developer!");
         }
@@ -169,15 +159,37 @@ public class GroupHandler implements Handler {
             }
         }
 
+        PreparedStatement ps1;
+        PreparedStatement ps2;
 
-        this.plugin.getMySQLHandler().update("DELETE FROM `r_group_membership` WHERE `group_ID` = " + group.getGroupID());
+        try {
+          ps1 = this.databaseHandler.getConnection().prepareStatement("DELETE FROM `r_group_membership` WHERE `group_ID` = ?");
+          ps1.setInt(1, group.getGroupID());
+          this.databaseHandler.update(ps1);
+
+          ps2 = this.databaseHandler.getConnection().prepareStatement("DELETE FROM `r_group_invitations` WHERE `to_group` = ?");
+          ps2.setInt(1, group.getGroupID());
+          this.databaseHandler.update(ps2);
+        } catch (SQLException e) {
+          e.printStackTrace();
+        } finally {
+          try {
+            if (ps1 != null) ps1.close();
+            if (ps2 != null) ps2.close();
+          } catch (SQLException e) {
+            e.printStackTrace();
+          }
+        }
 
 
-        this.plugin.getMySQLHandler().update("DELETE FROM `r_group_invitations` WHERE `to_group` = " + group.getGroupID());
     }
 
 
     public void deleteGroup(Group group) {
+
+      this.databaseHandler.update(
+        this.databaseHandler.getConnection().prepareStatement("DELETE FROM `r_group_invitations` WHERE `to_group` = ?")
+      );
         this.plugin.getMySQLHandler().update("DELETE FROM `r_groups` WHERE `group_ID` = " + group.getGroupID());
 
 
