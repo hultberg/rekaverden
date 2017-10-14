@@ -39,6 +39,11 @@ public class BlockListener implements org.bukkit.event.Listener {
 
         User user = this.userHandler.getUser(player.getUniqueId());
 
+        if (user.isGuest()) {
+          this.userHandler.denyGuestAction(player);
+          return;
+        }
+
         if (block.getType() == Material.TNT && !user.hasAccessLevel(User.MODERATOR)) {
           event.setCancelled(true);
           return;
@@ -116,6 +121,11 @@ public class BlockListener implements org.bukkit.event.Listener {
 
 
         User user = this.userHandler.getUser(player.getUniqueId());
+
+        if (user.isGuest()) {
+          this.userHandler.denyGuestAction(player);
+          return;
+        }
 
         if ((player.getGameMode() == org.bukkit.GameMode.CREATIVE) && (player.getItemInHand().getType() == Material.BOOK) && (user.hasEnabledSelectTool())) {
             user.setSelectToolPoint1(l);

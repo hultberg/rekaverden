@@ -2,6 +2,7 @@ package net.mittnett.reke.Rekeverden.listeners;
 
 import java.util.ArrayList;
 
+import net.mittnett.reke.Rekeverden.handlers.UserHandler;
 import org.bukkit.ChatColor;
 import org.bukkit.GameMode;
 import org.bukkit.Location;
@@ -23,19 +24,21 @@ import net.mittnett.reke.Rekeverden.handlers.User;
 
 public class PlayerListener implements org.bukkit.event.Listener {
   public Rekeverden plugin;
+  private UserHandler userHandler;
 
   public PlayerListener(Rekeverden instance) {
     this.plugin = instance;
+    this.userHandler = instance.getUserHandler();
   }
 
   @EventHandler(priority = EventPriority.NORMAL, ignoreCancelled = true)
   public void onPlayerJoin(PlayerJoinEvent event) {
     Player pl = event.getPlayer();
 
-    this.plugin.getUserHandler().loginPlayer(pl);
-    this.plugin.getUserHandler().setDisplayName(pl);
+    this.userHandler.loginPlayer(pl);
+    this.userHandler.setDisplayName(pl);
 
-    User user = this.plugin.getUserHandler().getUser(pl.getUniqueId());
+    User user = this.userHandler.getUser(pl.getUniqueId());
 
     event.setJoinMessage(null);
 
@@ -56,7 +59,7 @@ public class PlayerListener implements org.bukkit.event.Listener {
     event.setQuitMessage(null);
 
     if (event.getPlayer() != null) {
-      this.plugin.getUserHandler().logoutPlayer(event.getPlayer());
+      this.userHandler.logoutPlayer(event.getPlayer());
     }
 
     this.plugin.getServer().broadcastMessage(
@@ -65,6 +68,15 @@ public class PlayerListener implements org.bukkit.event.Listener {
 
   @EventHandler(priority = EventPriority.NORMAL, ignoreCancelled = true)
   public void onPlayerInteract(PlayerInteractEvent event) {
+    if (event.getPlayer() != null) {
+      User user = this.plugin.getUserHandler().getUser(event.getPlayer().getUniqueId());
+
+      if (user.isGuest()) {
+        this.userHandler.denyGuestAction(event.getPlayer());
+        return;
+      }
+    }
+
     switch (event.getHand()) {
       case HAND:
         this.handInteractEvent(event);
@@ -93,7 +105,7 @@ public class PlayerListener implements org.bukkit.event.Listener {
   private void handleRightClickBlock(PlayerInteractEvent event) {
     Player player = event.getPlayer();
     Block clickedBlock = event.getClickedBlock();
-    User user = this.plugin.getUserHandler().getUser(player.getUniqueId());
+    User user = this.userHandler.getUser(player.getUniqueId());
 
     if (event.getItem() != null) {
       switch (event.getItem().getType()) {

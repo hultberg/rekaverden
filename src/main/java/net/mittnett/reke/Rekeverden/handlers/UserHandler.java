@@ -53,6 +53,12 @@ public class UserHandler implements Handler {
   }
 
 
+  public void denyGuestAction(Player player) {
+    player.sendMessage(ChatColor.RED + "You are not allowed to build or do anything as a guest.");
+    player.sendMessage(ChatColor.RED + "Please contact and mod/admin to be registered.");
+  }
+
+
   public void loginPlayer(Player p) {
     User user = null;
 
@@ -428,18 +434,18 @@ public class UserHandler implements Handler {
     switch (user.getAccessLevel()) {
       case User.GUEST:
         color = ChatColor.GRAY;
-        prefix = "";
+        prefix = "Guest";
         break;
       case User.BUILDER:
         color = ChatColor.WHITE;
         break;
       case User.MODERATOR:
-        color = ChatColor.GREEN;
-        prefix = "";
+        color = ChatColor.DARK_BLUE;
+        prefix = "Mod";
         break;
       case User.ADMIN:
-        color = ChatColor.RED;
-        prefix = "";
+        color = ChatColor.GOLD;
+        prefix = "Admin";
     }
 
     player.setDisplayName((color != null ? color : "") + (prefix.length() > 0 ? "[" + prefix + "] " : "") + player.getName() + ChatColor.RESET);

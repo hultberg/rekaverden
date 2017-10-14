@@ -52,6 +52,13 @@ public class User {
   }
 
   /**
+   * Indicates if this user is a guest.
+   *
+   * @return Boolean
+   */
+  public Boolean isGuest() { return this.accessLevel == GUEST; }
+
+  /**
    * Provides the access level of this user. Use the final ints in this class instead of direct integers when comparing.
    *
    * 0 => Guest
