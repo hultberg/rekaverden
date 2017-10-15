@@ -62,13 +62,17 @@ public class Rekeverden extends JavaPlugin {
         getCommand("sethome").setExecutor(new HomeCommand(this));
         getCommand("delhome").setExecutor(new HomeCommand(this));
         getCommand("listhome").setExecutor(new HomeCommand(this));
-        getCommand("setspawn").setExecutor(new SetSpawnCommand());
+        getCommand("setspawn").setExecutor(new SetSpawnCommand(this.userHandler));
         getCommand("toggleselect").setExecutor(new net.mittnett.reke.Rekeverden.commands.ToggleSelectToolCommand(this));
         getCommand("protect").setExecutor(new net.mittnett.reke.Rekeverden.commands.ProtectAreaCommand(this));
         getCommand("gr").setExecutor(new net.mittnett.reke.Rekeverden.commands.GroupCommand(this));
         getCommand("tid").setExecutor(new TimeCommand());
         getCommand("eject").setExecutor(new EjectCommand());
         getCommand("i").setExecutor(new CustomGiveCommand(this.userHandler));
+        getCommand("tp").setExecutor(new TeleportCommand(this.userHandler));
+        getCommand("tphere").setExecutor(new TeleportCommand(this.userHandler));
+        getCommand("changestatus").setExecutor(new ChangeStatusCommand(this.userHandler));
+        getCommand("reg").setExecutor(new RegisterUserCommand(this.userHandler));
 
         PluginManager pm = getServer().getPluginManager();
         pm.registerEvents(new net.mittnett.reke.Rekeverden.listeners.PlayerListener(this), this);

@@ -1,9 +1,11 @@
 package net.mittnett.reke.Rekeverden.mysql;
 
 import net.mittnett.reke.Rekeverden.Rekeverden;
+import net.mittnett.reke.Rekeverden.handlers.User;
 
 import java.sql.*;
 import java.util.ArrayList;
+import java.util.UUID;
 import java.util.logging.Level;
 
 public class MySQLHandler {
@@ -24,6 +26,26 @@ public class MySQLHandler {
             e.printStackTrace();
             this.plugin.getLogger().log(Level.SEVERE, "[Rekeverden] Fikk ikke hentet warnings fra databasetilkobling! ", e);
         }
+    }
+
+
+    public boolean update(PreparedStatement statement) {
+      boolean result = false;
+
+      try {
+        statement.executeUpdate();
+        result = true;
+      } catch (SQLException ex) {
+        this.plugin.getLogger().log(Level.SEVERE, "[Rekeverden] SQL Exception", ex);
+      } finally {
+        try {
+          statement.close();
+        } catch (SQLException e) {
+          this.plugin.getLogger().log(Level.SEVERE, "[Rekeverden] SQL Exception", e);
+        }
+      }
+
+      return result;
     }
 
 
@@ -195,6 +217,19 @@ public class MySQLHandler {
 
 
         return column;
+    }
+
+
+    public SQLSelectResult select(PreparedStatement statement) {
+      SQLSelectResult result = null;
+
+      try {
+        result = new SQLSelectResult(statement, statement.executeQuery(), this.plugin.getLogger());
+      } catch (SQLException e) {
+        this.plugin.getLogger().log(Level.SEVERE, "[Rekeverden] SQL Exception while getting a user.", e);
+      }
+
+      return result;
     }
 
 

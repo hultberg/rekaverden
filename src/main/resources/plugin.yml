@@ -1,6 +1,6 @@
 name: Reke
 main: net.mittnett.reke.Rekeverden.Rekeverden
-version: 1.2.6
+version: 1.3.0
 description: rekeverden
 authors: ['Thypthon']
 
@@ -53,3 +53,21 @@ commands:
   gr:
     description: Group system
     usage: /<command>  ...
+
+  tp:
+    description: Teleport to another player.
+    usage: /<command> [player]
+
+  tphere:
+    description: Teleport yourself to another player.
+    usage: /<command> [player]
+
+  reg:
+    description: Register a player to become a builder.
+    aliases: [ add ]
+    usage: /<command> [player]
+
+  changestatus:
+    description: Change the status of a player.
+    aliases: [ cgst, chgst ]
+    usage: /<command> [player] [newStatus]

@@ -5,6 +5,7 @@ import java.util.Set;
 import java.util.UUID;
 
 import net.mittnett.reke.Rekeverden.Rekeverden;
+import org.bukkit.ChatColor;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
@@ -18,12 +19,14 @@ public class User {
   private final int id;
   private final UUID uuid;
   private final String name;
-  private final int accessLevel;
+  private int accessLevel;
   private boolean enabledSelectTool;
   private Location selectToolPoint1;
   private Location selectToolPoint2;
   private Set<Group> groups;
   private Set<GroupInvite> groupInvites;
+  private ChatColor displayColor;
+  private String displayPrefix;
 
   public User(int id, UUID uuid, String name, int accessLevel) {
     this.id = id;
@@ -34,9 +37,19 @@ public class User {
     this.groups = new HashSet<>();
     this.groupInvites = new HashSet<>();
 
+    this.setDisplayColor();
+    this.setDisplayPrefix();
 
     this.selectToolPoint1 = null;
     this.selectToolPoint2 = null;
+  }
+
+  /**
+   * Create a new user from another user object. Constructor copy strategy.
+   * @param user
+   */
+  public User(User user) {
+    this(user.getId(), user.getUuid(), user.getName(), user.getAccessLevel());
   }
 
   public int getId() {
@@ -80,6 +93,12 @@ public class User {
    */
   public boolean hasAccessLevel(int level) {
     return this.accessLevel >= level;
+  }
+
+  public void setAccessLevel(int level) {
+    this.accessLevel = level;
+    this.setDisplayColor();
+    this.setDisplayPrefix();
   }
 
   public boolean hasEnabledSelectTool() {
@@ -242,5 +261,84 @@ public class User {
 
   public boolean equals(User user) {
     return user != null && user.getId() == this.getId();
+  }
+
+  private void setDisplayColor() {
+    ChatColor color;
+
+    switch (this.accessLevel) {
+      case GUEST:
+        color = ChatColor.GRAY;
+        break;
+
+      case BUILDER:
+        color = ChatColor.WHITE;
+        break;
+
+      case MODERATOR:
+        color = ChatColor.BLUE;
+        break;
+
+      case ADMIN:
+        color = ChatColor.GOLD;
+        break;
+
+      default:
+        color = ChatColor.WHITE;
+        break;
+    }
+
+    this.displayColor = color;
+  }
+
+  private void setDisplayPrefix() {
+    String prefix = "";
+
+    switch (this.accessLevel) {
+      case GUEST:
+        prefix = "Guest";
+        break;
+      case BUILDER:
+        break;
+      case MODERATOR:
+        prefix = "Mod";
+        break;
+      case ADMIN:
+        prefix = "Adm";
+    }
+
+    this.displayPrefix = prefix;
+  }
+
+  public ChatColor getDisplayColor() {
+    return this.displayColor;
+  }
+
+  public String getDisplayPrefix() {
+    return this.displayPrefix;
+  }
+
+  public String getDisplayPrefixName() {
+    String prefix = "";
+
+    switch (this.accessLevel) {
+      case GUEST:
+        prefix = "Guest";
+        break;
+      case BUILDER:
+        prefix = "Builder";
+        break;
+      case MODERATOR:
+        prefix = "Mod";
+        break;
+      case ADMIN:
+        prefix = "Adm";
+    }
+
+    return prefix;
+  }
+
+  public String getDisplayName() {
+    return this.displayColor + (this.displayPrefix.length() > 0 ? "[" + this.displayPrefix + "] " : "") + this.name + ChatColor.RESET;
   }
 }

@@ -8,6 +8,7 @@ services:
     restart: always
     volumes:
       - db_data:/var/lib/mysql
+      - "./database.sql:/database.sql"
     environment:
       MYSQL_ROOT_PASSWORD: secret
       MYSQL_USER: mc

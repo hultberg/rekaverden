@@ -2,6 +2,7 @@ package net.mittnett.reke.Rekeverden.handlers;
 
 import net.mittnett.reke.Rekeverden.Rekeverden;
 
+import net.mittnett.reke.Rekeverden.mysql.SQLSelectResult;
 import org.bukkit.ChatColor;
 import org.bukkit.entity.Player;
 import org.bukkit.scoreboard.Scoreboard;
@@ -11,9 +12,8 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.Iterator;
-import java.util.Set;
-import java.util.UUID;
+import java.util.*;
+import java.util.function.Predicate;
 import java.util.logging.Level;
 
 public class UserHandler implements Handler {
@@ -23,8 +23,12 @@ public class UserHandler implements Handler {
 
   public UserHandler(Rekeverden plugin) {
     this.plugin = plugin;
-    this.onlineUsers = new java.util.HashSet();
-    this.localCachedUsers = new java.util.HashSet();
+    this.onlineUsers = new HashSet<>();
+    this.localCachedUsers = new HashSet<>();
+  }
+
+  public interface UserComparator {
+    boolean equals(User user, Object value);
   }
 
 
@@ -46,30 +50,28 @@ public class UserHandler implements Handler {
     this.localCachedUsers.clear();
   }
 
-
   public void clearUserCached(User user) {
     this.onlineUsers.remove(user);
     this.localCachedUsers.remove(user);
   }
-
 
   public void denyGuestAction(Player player) {
     player.sendMessage(ChatColor.RED + "You are not allowed to build or do anything as a guest.");
     player.sendMessage(ChatColor.RED + "Please contact and mod/admin to be registered.");
   }
 
-
-  public void loginPlayer(Player p) {
-    User user = null;
+  public User loginPlayer(Player p) {
+    User user;
 
     if (userExists(p.getUniqueId())) {
       user = getUser(p.getUniqueId(), true);
     } else {
-      user = createUser(p.getUniqueId(), p.getName(), 1);
+      user = createUser(p.getUniqueId(), p.getName(), User.GUEST);
     }
 
     this.onlineUsers.add(user);
-    updateUser(user, p.getUniqueId(), p.getName(), user.getAccessLevel());
+
+    return user;
   }
 
 
@@ -97,297 +99,252 @@ public class UserHandler implements Handler {
     return new User(newUserId, uuid, nick, accessLevel);
   }
 
+  /**
+   * Update the provided user fields in database.
+   *
+   * This will update:
+   * 1. nick if it has changed on
+   *
+   * If anything has changed, the runtime cached User object is refreshed.
+   *
+   * @param user User
+   * @return boolean
+   */
+  public boolean updateUser(final User newState) {
+    boolean result = false;
 
-  public boolean updateUser(User user, UUID uuid, String nick, int accessLevel) {
-    String query = null;
+    // Get the current state of the user.
+    User previousState = getUser(newState.getId());
 
+    HashMap<String, Object> differences = new HashMap<>();
 
-    if ((!nick.equalsIgnoreCase(user.getName())) || (!uuid.equals(user.getUuid())) || (accessLevel != user.getAccessLevel())) {
-      query = "UPDATE `r_users` SET";
+    if (!previousState.getName().equals(newState.getName())) {
+      differences.put("nick", newState.getName());
     }
 
-
-    if (!nick.equalsIgnoreCase(user.getName())) {
-      query = query + " `nick` = '" + nick + "'";
+    if (!previousState.getUuid().toString().equals(newState.getUuid().toString())) {
+      differences.put("uuid", newState.getUuid().toString());
     }
 
-
-    if (!uuid.equals(user.getUuid())) {
-      query = query + " `uuid` = '" + uuid.toString() + "'";
+    if (previousState.getAccessLevel() != newState.getAccessLevel()) {
+      differences.put("access", newState.getAccessLevel());
     }
 
+    if (differences.isEmpty()) return false;
 
-    if (accessLevel != user.getAccessLevel()) {
-      query = query + " `access` = " + accessLevel;
+    StringBuilder query = new StringBuilder();
+    query.append("UPDATE r_users SET ");
+
+    Iterator keyIterator = differences.keySet().iterator();
+    while (keyIterator.hasNext()) {
+      query.append("`").append(keyIterator.next()).append("` = ?");
+
+      if (keyIterator.hasNext()) query.append(", ");
+      else query.append(" ");
     }
 
+    query.append("WHERE `uid` = ?");
 
-    if (query != null) {
-      query = query + " WHERE `uid` = " + user.getId();
-      if (!this.plugin.getMySQLHandler().update(query)) {
-        this.plugin.getLogger().log(Level.SEVERE, "Failed to update a user!", new SQLException("Failed to update a user!"));
-        return false;
+    try {
+      PreparedStatement statement = this.plugin.getConnection().prepareStatement(query.toString());
+
+      this.plugin.getLogger().log(Level.INFO, query.toString());
+
+      int index = 1;
+      for (Object value : differences.values()) {
+        if (value instanceof String) {
+          statement.setString(index, value.toString());
+        } else if (value instanceof Integer) {
+          statement.setInt(index, (int) value);
+        }
+
+        index += 1;
       }
 
+      statement.setInt(index, newState.getId());
 
-      this.onlineUsers.remove(user);
-      this.onlineUsers.add(getUser(uuid, true));
+      result = this.plugin.getMySQLHandler().update(statement);
+    } catch (SQLException e) {
+      this.plugin.getLogger().log(Level.SEVERE, "Failed to update a user!", e);
     }
 
-    return true;
-  }
+    Predicate<? super User> predicate = new Predicate<User>() {
+      @Override
+      public boolean test(User user) {
+        return user.getId() == newState.getId();
+      }
+    };
 
+    this.onlineUsers.removeIf(predicate);
+    this.localCachedUsers.removeIf(predicate);
+    this.onlineUsers.add(newState);
+    this.localCachedUsers.add(newState);
+
+    return result;
+  }
 
   public User getUser(int id) {
     return getUser(id, false);
   }
 
-
   public User getUser(int id, boolean refreshCache) {
-    User user = null;
+    if (!refreshCache) {
+      User foundCached = this.getCachedUser(id);
 
-
-    if ((!refreshCache) && (this.onlineUsers.size() > 0)) {
-      for (User thisUser : this.onlineUsers) {
-        if (thisUser.getId() == id) {
-          return thisUser;
-        }
-      }
+      if (foundCached != null) return foundCached;
     }
 
-    if ((!refreshCache) && (this.localCachedUsers.size() > 0)) {
-      for (User thisUser : this.localCachedUsers) {
-        if (thisUser.getId() == id) {
-          return thisUser;
-        }
-      }
-    }
-    Connection conn = null;
-    PreparedStatement ps = null;
-    ResultSet rs = null;
-
-    try {
-      conn = this.plugin.getConnection();
-      ps = conn.prepareStatement("SELECT `uid`, `uuid`, `nick`, `access`, `groups` FROM `r_users` WHERE `uid` = ?");
-      ps.setInt(1, id);
-
-      rs = ps.executeQuery();
-      while (rs.next()) {
-        user = new User(rs.getInt(1), UUID.fromString(rs.getString(2)), rs.getString(3), rs.getInt(4));
-      }
-
-
-      try {
-        if (ps != null) {
-          ps.close();
-        }
-        if (rs != null) {
-          rs.close();
-        }
-        if (conn != null) {
-          conn.close();
-        }
-      } catch (SQLException ex) {
-        this.plugin.getLogger().log(Level.SEVERE, "[Rekeverden] SQL Exception (under lukking)", ex);
-      }
-
-
-      if (user == null) {
-        return user;
-      }
-    } catch (SQLException e) {
-      this.plugin.getLogger().log(Level.SEVERE, "[Rekeverden] SQL Exception while getting a user.", e);
-    } finally {
-      try {
-        if (ps != null) {
-          ps.close();
-        }
-        if (rs != null) {
-          rs.close();
-        }
-        if (conn != null) {
-          conn.close();
-        }
-      } catch (SQLException ex) {
-        this.plugin.getLogger().log(Level.SEVERE, "[Rekeverden] SQL Exception (under lukking)", ex);
-      }
-    }
-
+    User user = this.getUserFromDatabase(id, "uid");
+    if (user == null) return null;
 
     this.localCachedUsers.add(user);
     user.setGroupInvites(this.plugin.getGroupHandler().getGroupInvitesOfUser(user));
-    fillGroupMemberships(user);
+    this.fillGroupMemberships(user);
     this.localCachedUsers.add(user);
 
 
     return user;
   }
-
 
   public User getUser(String nick) {
     return getUser(nick, false);
   }
 
-
   public User getUser(String nick, boolean refreshCache) {
-    User user = null;
+    if (!refreshCache) {
+      User foundCached = this.getCachedUser(nick);
 
-
-    if ((!refreshCache) && (this.onlineUsers.size() > 0)) {
-      for (User thisUser : this.onlineUsers) {
-        if (thisUser.getName().equalsIgnoreCase(nick)) {
-          return thisUser;
-        }
-      }
+      if (foundCached != null) return foundCached;
     }
 
-    if ((!refreshCache) && (this.localCachedUsers.size() > 0)) {
-      for (User thisUser : this.localCachedUsers) {
-        if (thisUser.getName().equalsIgnoreCase(nick)) {
-          return thisUser;
-        }
-      }
-    }
-    Connection conn = null;
-    PreparedStatement ps = null;
-    ResultSet rs = null;
+    User user = this.getUserFromDatabase(nick, "nick");
+    if (user == null) return null;
 
-    try {
-      conn = this.plugin.getConnection();
-      ps = conn.prepareStatement("SELECT `uid`, `uuid`, `nick`, `access`, `groups` FROM `r_users` WHERE `nick` = ?");
-      ps.setString(1, nick);
-
-      rs = ps.executeQuery();
-      while (rs.next()) {
-        user = new User(rs.getInt(1), UUID.fromString(rs.getString(2)), rs.getString(3), rs.getInt(4));
-      }
-
-
-      try {
-        if (ps != null) {
-          ps.close();
-        }
-        if (rs != null) {
-          rs.close();
-        }
-        if (conn != null) {
-          conn.close();
-        }
-      } catch (SQLException ex) {
-        this.plugin.getLogger().log(Level.SEVERE, "[Rekeverden] SQL Exception (under lukking)", ex);
-      }
-    } catch (SQLException e) {
-      this.plugin.getLogger().log(Level.SEVERE, "[Rekeverden] SQL Exception while getting a user.", e);
-    } finally {
-      try {
-        if (ps != null) {
-          ps.close();
-        }
-        if (rs != null) {
-          rs.close();
-        }
-        if (conn != null) {
-          conn.close();
-        }
-      } catch (SQLException ex) {
-        this.plugin.getLogger().log(Level.SEVERE, "[Rekeverden] SQL Exception (under lukking)", ex);
-      }
-    }
-
-    if (user != null) {
-      this.localCachedUsers.add(user);
-      user.setGroupInvites(this.plugin.getGroupHandler().getGroupInvitesOfUser(user));
-      fillGroupMemberships(user);
-      this.localCachedUsers.add(user);
-    }
+    this.localCachedUsers.add(user);
+    user.setGroupInvites(this.plugin.getGroupHandler().getGroupInvitesOfUser(user));
+    this.fillGroupMemberships(user);
+    this.localCachedUsers.add(user);
 
     return user;
   }
-
 
   public User getUser(UUID uuid) {
     return getUser(uuid, false);
   }
 
-
   public User getUser(UUID uuid, boolean refreshCache) {
-    User user = null;
+    if (!refreshCache) {
+      User foundCached = this.getCachedUser(uuid);
 
-
-    if ((!refreshCache) && (this.onlineUsers.size() > 0)) {
-      for (User thisUser : this.onlineUsers) {
-        if (thisUser.getUuid().equals(uuid)) {
-          return thisUser;
-        }
-      }
+      if (foundCached != null) return foundCached;
     }
 
-    if ((!refreshCache) && (this.localCachedUsers.size() > 0)) {
-      for (User thisUser : this.localCachedUsers) {
-        if (thisUser.getUuid().equals(uuid)) {
-          return thisUser;
-        }
-      }
-    }
-    Connection conn = null;
-    PreparedStatement ps = null;
-    ResultSet rs = null;
-
-    try {
-      conn = this.plugin.getConnection();
-      ps = conn.prepareStatement("SELECT `uid`, `uuid`, `nick`, `access`, `groups` FROM `r_users` WHERE `uuid` = ?");
-      ps.setString(1, uuid.toString());
-
-      rs = ps.executeQuery();
-      while (rs.next()) {
-        user = new User(rs.getInt(1), UUID.fromString(rs.getString(2)), rs.getString(3), rs.getInt(4));
-      }
-
-
-      try {
-        if (ps != null) {
-          ps.close();
-        }
-        if (rs != null) {
-          rs.close();
-        }
-        if (conn != null) {
-          conn.close();
-        }
-      } catch (SQLException ex) {
-        this.plugin.getLogger().log(Level.SEVERE, "[Rekeverden] SQL Exception (under lukking)", ex);
-      }
-
-
-      if (user == null) {
-        return user;
-      }
-    } catch (SQLException e) {
-      this.plugin.getLogger().log(Level.SEVERE, "[Rekeverden] SQL Exception while getting a user.", e);
-    } finally {
-      try {
-        if (ps != null) {
-          ps.close();
-        }
-        if (rs != null) {
-          rs.close();
-        }
-        if (conn != null) {
-          conn.close();
-        }
-      } catch (SQLException ex) {
-        this.plugin.getLogger().log(Level.SEVERE, "[Rekeverden] SQL Exception (under lukking)", ex);
-      }
-    }
-
+    User user = this.getUserFromDatabase(uuid, "uuid");
+    if (user == null) return null;
 
     this.localCachedUsers.add(user);
     user.setGroupInvites(this.plugin.getGroupHandler().getGroupInvitesOfUser(user));
-    fillGroupMemberships(user);
+    this.fillGroupMemberships(user);
     this.localCachedUsers.add(user);
 
+    return user;
+  }
+
+  /**
+   * Provides a user from the database.
+   *
+   * @param value
+   * @param column
+   * @return User
+   */
+  private User getUserFromDatabase(Object value, String column) {
+    User user = null;
+
+    try {
+      PreparedStatement ps = this.plugin.getConnection().prepareStatement(
+        "SELECT `uid`, `uuid`, `nick`, `access`, `groups` FROM `r_users` WHERE `" + column + "` = ?"
+      );
+
+      if (value instanceof String) {
+        ps.setString(1, value.toString());
+      } else if (value instanceof UUID) {
+        ps.setString(1, value.toString());
+      } else if (value instanceof Integer) {
+        ps.setInt(1, (int) value);
+      }
+
+      SQLSelectResult result = this.plugin.getMySQLHandler().select(ps);
+
+      while (result.getResultSet().next()) {
+        user = new User(
+          result.getResultSet().getInt(1),
+          UUID.fromString(result.getResultSet().getString(2)),
+          result.getResultSet().getString(3),
+          result.getResultSet().getInt(4)
+        );
+      }
+
+      result.close();
+    } catch (SQLException ex) {
+      this.plugin.getLogger().log(Level.SEVERE, "[Rekeverden] SQL Exception", ex);
+    }
 
     return user;
+  }
+
+  private User getCachedUser(String nick) {
+    return this.getCachedUser(nick, new UserComparator() {
+      @Override
+      public boolean equals(User user, Object value) {
+        return user.getUuid().toString().equals(value.toString());
+      }
+    });
+  }
+
+  private User getCachedUser(UUID uuid) {
+    return this.getCachedUser(uuid, new UserComparator() {
+      @Override
+      public boolean equals(User user, Object value) {
+        return user.getUuid().toString().equals(value.toString());
+      }
+    });
+  }
+
+  private User getCachedUser(int id) {
+    return this.getCachedUser(id, new UserComparator() {
+      @Override
+      public boolean equals(User user, Object value) {
+        return user.getId() == (int) value;
+      }
+    });
+  }
+
+  private User getCachedUser(Object value, UserComparator comparator) {
+    if (this.onlineUsers.size() > 0) {
+      Iterator onlineUsers = this.localCachedUsers.iterator();
+
+      while (onlineUsers.hasNext()) {
+        User user = (User) onlineUsers.next();
+
+        if (comparator.equals(user, value)) {
+          return user;
+        }
+      }
+    }
+
+    if (this.localCachedUsers.size() > 0) {
+      Iterator cachedUsers = this.localCachedUsers.iterator();
+
+      while (cachedUsers.hasNext()) {
+        User user = (User) cachedUsers.next();
+
+        if (comparator.equals(user, value)) {
+          return user;
+        }
+      }
+    }
+
+    return null;
   }
 
   private void fillGroupMemberships(User user) {
@@ -428,27 +385,11 @@ public class UserHandler implements Handler {
     if (user == null) {
       return;
     }
-    ChatColor color = null;
-    String prefix = "";
 
-    switch (user.getAccessLevel()) {
-      case User.GUEST:
-        color = ChatColor.GRAY;
-        prefix = "Guest";
-        break;
-      case User.BUILDER:
-        color = ChatColor.WHITE;
-        break;
-      case User.MODERATOR:
-        color = ChatColor.DARK_BLUE;
-        prefix = "Mod";
-        break;
-      case User.ADMIN:
-        color = ChatColor.GOLD;
-        prefix = "Admin";
-    }
+    ChatColor color = user.getDisplayColor();
+    String prefix = user.getDisplayPrefix();
 
-    player.setDisplayName((color != null ? color : "") + (prefix.length() > 0 ? "[" + prefix + "] " : "") + player.getName() + ChatColor.RESET);
+    player.setDisplayName(user.getDisplayName());
 
     player.setPlayerListName(color + (player.getName().length() > 14 ? player.getName().substring(0, 14) : player.getName()));
 
@@ -469,6 +410,25 @@ public class UserHandler implements Handler {
       }
 
       team.addPlayer(player);
+    }
+  }
+
+  public boolean changeStatus(User user, int newStatus) {
+    if (user.getAccessLevel() == newStatus) return false;
+
+    User newUser = new User(user);
+    newUser.setAccessLevel(newStatus);
+
+    return this.updateUser(newUser);
+  }
+
+  public void alertAdmins(String message) {
+    for (User user : this.onlineUsers) {
+      Player p = this.plugin.getServer().getPlayer(user.getUuid());
+
+      if (p != null) {
+        p.sendMessage(ChatColor.DARK_RED + "[Server] ERROR: " + ChatColor.RED + message);
+      }
     }
   }
 }

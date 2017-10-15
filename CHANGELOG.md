@@ -1,5 +1,16 @@
 # Changelog
 
+## 1.3.0
+
+* Simplify UserHandler getUser methods.
+* Add MySQLHandler.select(PreparedStatement)
+* Add UserHandler.changeStatus(User, int) to change a users access level and save it.
+* Improve implementation of UserHandler.updateUser(User)
+* Allow to copy a user via new constructor `new User(User)`
+* Added command /tp, /tphere, /changestatus and /reg
+* Added a base command class to check permissions.
+* New users are now by default guests.
+
 ### 1.2.6
 
 * Return minecart and remove when player exists it.

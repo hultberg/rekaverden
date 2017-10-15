@@ -1,6 +1,7 @@
 package net.mittnett.reke.Rekeverden.listeners;
 
 import java.util.ArrayList;
+import java.util.logging.Level;
 
 import net.mittnett.reke.Rekeverden.handlers.UserHandler;
 import org.bukkit.ChatColor;
@@ -33,25 +34,29 @@ public class PlayerListener implements org.bukkit.event.Listener {
 
   @EventHandler(priority = EventPriority.NORMAL, ignoreCancelled = true)
   public void onPlayerJoin(PlayerJoinEvent event) {
-    Player pl = event.getPlayer();
-
-    this.userHandler.loginPlayer(pl);
-    this.userHandler.setDisplayName(pl);
-
-    User user = this.userHandler.getUser(pl.getUniqueId());
-
     event.setJoinMessage(null);
 
-    pl.sendMessage(ChatColor.GRAY + "|| " + ChatColor.GOLD + "---------- WELCOME TO Rekeverden");
-    pl.sendMessage(ChatColor.GRAY + "|| " + ChatColor.RESET + "Dynmap: http://mc.rekalarsen.no:8123/");
+    Player pl = event.getPlayer();
 
-    if (user.getGroupInvites().size() > 0) {
-      pl.sendMessage(ChatColor.GRAY + "|| " + ChatColor.DARK_GREEN + "You have " + ChatColor.WHITE
-        + user.getGroupInvites().size() + ChatColor.DARK_GREEN + " group invites pending.");
+    try {
+      User user = this.userHandler.loginPlayer(pl);
+      this.userHandler.setDisplayName(pl);
+
+      pl.sendMessage(ChatColor.GRAY + "|| " + ChatColor.GOLD + "---------- WELCOME TO Rekeverden");
+      pl.sendMessage(ChatColor.GRAY + "|| " + ChatColor.RESET + "Dynmap: http://mc.rekalarsen.no:8123/");
+
+      if (user.getGroupInvites().size() > 0) {
+        pl.sendMessage(ChatColor.GRAY + "|| " + ChatColor.DARK_GREEN + "You have " + ChatColor.WHITE
+          + user.getGroupInvites().size() + ChatColor.DARK_GREEN + " group invites pending.");
+      }
+    } catch (Exception e) {
+      this.plugin.getLogger().log(Level.SEVERE, "Error caught during a login.", e);
+      this.userHandler.alertAdmins("An exception was thrown during a login of the player: " + pl.getName());
     }
 
+
     this.plugin.getServer().broadcastMessage(
-      ChatColor.GRAY + "// " + event.getPlayer().getDisplayName() + ChatColor.GREEN + " joined the game.");
+      ChatColor.GRAY + "// " + pl.getDisplayName() + ChatColor.GREEN + " joined the game.");
   }
 
   @EventHandler(priority = EventPriority.NORMAL, ignoreCancelled = true)
@@ -72,6 +77,7 @@ public class PlayerListener implements org.bukkit.event.Listener {
       User user = this.plugin.getUserHandler().getUser(event.getPlayer().getUniqueId());
 
       if (user.isGuest()) {
+        event.setCancelled(true);
         this.userHandler.denyGuestAction(event.getPlayer());
         return;
       }
