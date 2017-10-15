@@ -15,6 +15,7 @@
 * Added command /tp, /tphere, /changestatus and /reg
 * Added a base command class to check permissions.
 * New users are now by default guests.
+* Upgrade to spigot and bukkit api v1.12.2
 
 ### 1.2.6
 
