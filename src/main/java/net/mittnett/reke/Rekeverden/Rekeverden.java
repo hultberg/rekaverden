@@ -73,6 +73,7 @@ public class Rekeverden extends JavaPlugin {
         getCommand("tphere").setExecutor(new TeleportCommand(this.userHandler));
         getCommand("changestatus").setExecutor(new ChangeStatusCommand(this.userHandler));
         getCommand("reg").setExecutor(new RegisterUserCommand(this.userHandler));
+        getCommand("restrict").setExecutor(new RestrictPlayerCommand(this.userHandler));
 
         PluginManager pm = getServer().getPluginManager();
         pm.registerEvents(new net.mittnett.reke.Rekeverden.listeners.PlayerListener(this), this);

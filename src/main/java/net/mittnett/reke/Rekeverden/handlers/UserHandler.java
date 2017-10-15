@@ -1,5 +1,6 @@
 package net.mittnett.reke.Rekeverden.handlers;
 
+import com.sun.org.apache.xpath.internal.operations.Bool;
 import net.mittnett.reke.Rekeverden.Rekeverden;
 
 import net.mittnett.reke.Rekeverden.mysql.SQLSelectResult;
@@ -56,7 +57,7 @@ public class UserHandler implements Handler {
     this.localCachedUsers.remove(user);
   }
 
-  public void denyGuestAction(Player player) {
+  public void explainDeniedAction(Player player) {
     player.sendMessage(ChatColor.RED + "You are not allowed to build or do anything as a guest.");
     player.sendMessage(ChatColor.RED + "Please contact and mod/admin to be registered.");
   }
@@ -70,7 +71,9 @@ public class UserHandler implements Handler {
       user = createUser(p.getUniqueId(), p.getName(), User.GUEST);
     }
 
+    this.updatePlayerCanPickUp(user);
     this.setPermissions(p);
+    this.setDisplayName(p);
     this.onlineUsers.add(user);
 
     return user;
@@ -132,6 +135,10 @@ public class UserHandler implements Handler {
       differences.put("access", newState.getAccessLevel());
     }
 
+    if (previousState.isRestricted() != newState.isRestricted()) {
+      differences.put("restricted", newState.isRestricted() ? 1 : 0);
+    }
+
     if (differences.isEmpty()) return false;
 
     StringBuilder query = new StringBuilder();
@@ -158,6 +165,8 @@ public class UserHandler implements Handler {
           statement.setString(index, value.toString());
         } else if (value instanceof Integer) {
           statement.setInt(index, (int) value);
+        } else if (value instanceof Boolean) {
+          statement.setBoolean(index, (boolean) value);
         }
 
         index += 1;
@@ -264,7 +273,7 @@ public class UserHandler implements Handler {
 
     try {
       PreparedStatement ps = this.plugin.getConnection().prepareStatement(
-        "SELECT `uid`, `uuid`, `nick`, `access`, `groups` FROM `r_users` WHERE `" + column + "` = ?"
+        "SELECT `uid`, `uuid`, `nick`, `access`, `restricted`, `groups` FROM `r_users` WHERE `" + column + "` = ?"
       );
 
       if (value instanceof String) {
@@ -284,6 +293,8 @@ public class UserHandler implements Handler {
           result.getResultSet().getString(3),
           result.getResultSet().getInt(4)
         );
+
+        user.setRestricted(result.getResultSet().getInt(5) == 1);
       }
 
       result.close();
@@ -424,6 +435,13 @@ public class UserHandler implements Handler {
     return this.updateUser(newUser);
   }
 
+  public void updatePlayerCanPickUp(User user) {
+    Player player = this.plugin.getServer().getPlayer(user.getUuid());
+    if (player != null) {
+      player.setCanPickupItems(user.isAllowedInteraction());
+    }
+  }
+
   public void setPermissions(Player player) {
     PermissionAttachment perms = player.addAttachment(this.plugin);
 
@@ -444,13 +462,31 @@ public class UserHandler implements Handler {
     perms.setPermission("worldedit.*", value);
   }
 
+  public void alertMods(String message) {
+    for (User user : this.onlineUsers) {
+      Player p = this.plugin.getServer().getPlayer(user.getUuid());
+
+      if (p != null && user.hasAccessLevel(User.MODERATOR)) {
+        p.sendMessage(ChatColor.DARK_RED + "(Adm/Mod) " + ChatColor.RED + message);
+      }
+    }
+  }
+
   public void alertAdmins(String message) {
     for (User user : this.onlineUsers) {
       Player p = this.plugin.getServer().getPlayer(user.getUuid());
 
-      if (p != null) {
-        p.sendMessage(ChatColor.DARK_RED + "[Server] ERROR: " + ChatColor.RED + message);
+      if (p != null && user.hasAccessLevel(User.ADMIN)) {
+        p.sendMessage(ChatColor.DARK_RED + "(Adm) " + ChatColor.RED + message);
       }
+    }
+  }
+
+  public void alertRestricting(Player target, boolean restricted) {
+    if (restricted) {
+      target.sendMessage(ChatColor.RED + "You have are restricted, building and interaction rights have been revoked.");
+    } else {
+      target.sendMessage(ChatColor.GREEN + "You are no longer restricted, building and interaction rights have been restored.");
     }
   }
 }

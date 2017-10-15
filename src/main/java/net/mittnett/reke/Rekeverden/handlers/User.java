@@ -27,6 +27,7 @@ public class User {
   private Set<GroupInvite> groupInvites;
   private ChatColor displayColor;
   private String displayPrefix;
+  private boolean isRestricted = false;
 
   public User(int id, UUID uuid, String name, int accessLevel) {
     this.id = id;
@@ -70,6 +71,20 @@ public class User {
    * @return Boolean
    */
   public Boolean isGuest() { return this.accessLevel == GUEST; }
+
+  public Boolean isRestricted() { return this.isRestricted; }
+
+  public void setRestricted(boolean restricted) {
+    this.isRestricted = restricted;
+  }
+
+  public Boolean hasBuildingRights() {
+    return !this.isRestricted && !this.isGuest();
+  }
+
+  public Boolean isAllowedInteraction() {
+    return !this.isRestricted && !this.isGuest();
+  }
 
   /**
    * Provides the access level of this user. Use the final ints in this class instead of direct integers when comparing.

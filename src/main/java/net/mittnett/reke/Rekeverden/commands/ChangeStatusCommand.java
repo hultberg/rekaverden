@@ -54,6 +54,7 @@ public class ChangeStatusCommand extends BaseCommand {
 
     // Re-fetch the user.
     User newTargetUser = this.userHandler.getUser(targetUser.getId());
+    this.userHandler.updatePlayerCanPickUp(newTargetUser);
 
     Player target = Bukkit.getPlayer(args[0]);
     if (target != null) {

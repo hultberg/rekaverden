@@ -39,8 +39,12 @@ public class BlockListener implements org.bukkit.event.Listener {
 
         User user = this.userHandler.getUser(player.getUniqueId());
 
-        if (user.isGuest()) {
-          this.userHandler.denyGuestAction(player);
+        if (!user.hasBuildingRights()) {
+          event.setCancelled(true);
+
+          if (user.isGuest()) {
+            this.userHandler.explainDeniedAction(player);
+          }
           return;
         }
 
@@ -119,15 +123,18 @@ public class BlockListener implements org.bukkit.event.Listener {
         Location l = block.getLocation();
         Player player = event.getPlayer();
 
-
         User user = this.userHandler.getUser(player.getUniqueId());
 
-        if (user.isGuest()) {
-          this.userHandler.denyGuestAction(player);
+        if (!user.hasBuildingRights()) {
+          event.setCancelled(true);
+
+          if (user.isGuest()) {
+            this.userHandler.explainDeniedAction(player);
+          }
           return;
         }
 
-        if ((player.getGameMode() == org.bukkit.GameMode.CREATIVE) && (player.getItemInHand().getType() == Material.BOOK) && (user.hasEnabledSelectTool())) {
+        if (player.getInventory().getItemInMainHand().getType() == Material.BOOK && user.hasEnabledSelectTool()) {
             user.setSelectToolPoint1(l);
             player.sendMessage(ChatColor.AQUA + "[SEL] Point #1 has been set/updated. (" + l.getBlockX() + ", " + l.getBlockY() + ", " + l.getBlockZ() + ")");
             event.setCancelled(true);

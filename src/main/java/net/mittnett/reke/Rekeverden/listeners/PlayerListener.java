@@ -40,7 +40,6 @@ public class PlayerListener implements org.bukkit.event.Listener {
 
     try {
       User user = this.userHandler.loginPlayer(pl);
-      this.userHandler.setDisplayName(pl);
 
       pl.sendMessage(ChatColor.GRAY + "|| " + ChatColor.GOLD + "---------- WELCOME TO Rekeverden");
       pl.sendMessage(ChatColor.GRAY + "|| " + ChatColor.RESET + "Dynmap: http://mc.rekalarsen.no:8123/");
@@ -49,9 +48,13 @@ public class PlayerListener implements org.bukkit.event.Listener {
         pl.sendMessage(ChatColor.GRAY + "|| " + ChatColor.DARK_GREEN + "You have " + ChatColor.WHITE
           + user.getGroupInvites().size() + ChatColor.DARK_GREEN + " group invites pending.");
       }
+
+      if (user.isRestricted()) {
+        this.userHandler.alertRestricting(pl, user.isRestricted());
+      }
     } catch (Exception e) {
       this.plugin.getLogger().log(Level.SEVERE, "Error caught during a login.", e);
-      this.userHandler.alertAdmins("An exception was thrown during a login of the player: " + pl.getName());
+      this.userHandler.alertAdmins("ERROR! An exception was thrown during a login of the player: " + pl.getName());
     }
 
     this.plugin.getServer().broadcastMessage(
@@ -75,9 +78,12 @@ public class PlayerListener implements org.bukkit.event.Listener {
     if (event.getPlayer() != null) {
       User user = this.plugin.getUserHandler().getUser(event.getPlayer().getUniqueId());
 
-      if (user != null && user.isGuest()) {
+      if (user != null && !user.isAllowedInteraction()) {
         event.setCancelled(true);
-        this.userHandler.denyGuestAction(event.getPlayer());
+
+        if (user.isGuest()) {
+          this.userHandler.explainDeniedAction(event.getPlayer());
+        }
         return;
       }
     }

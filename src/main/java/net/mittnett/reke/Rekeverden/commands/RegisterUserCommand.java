@@ -32,6 +32,7 @@ public class RegisterUserCommand extends BaseCommand {
     this.userHandler.changeStatus(targetUser, User.BUILDER);
 
     User newTargetUser = this.userHandler.getUser(targetUser.getId());
+    this.userHandler.updatePlayerCanPickUp(newTargetUser);
 
     Player target = Bukkit.getPlayer(args[0]);
     if (target != null) {

@@ -1,5 +1,10 @@
 # Changelog
 
+### 1.3.1
+
+* Added command /restrict, this will restrict a user from building and interacting in-game.
+* Determine interaction and building rights based on separate boolean values, instead of checking if user is guest.
+
 ## 1.3.0
 
 * Simplify UserHandler getUser methods.
