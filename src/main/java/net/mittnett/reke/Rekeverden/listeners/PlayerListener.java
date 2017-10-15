@@ -76,7 +76,7 @@ public class PlayerListener implements org.bukkit.event.Listener {
     if (event.getPlayer() != null) {
       User user = this.plugin.getUserHandler().getUser(event.getPlayer().getUniqueId());
 
-      if (user.isGuest()) {
+      if (user != null && user.isGuest()) {
         event.setCancelled(true);
         this.userHandler.denyGuestAction(event.getPlayer());
         return;
