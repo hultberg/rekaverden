@@ -13,31 +13,23 @@ import org.bukkit.entity.Player;
 
 import java.util.HashMap;
 
-public class HomeCommand implements CommandExecutor {
-
-    private UserHandler userHandler;
+public class HomeCommand extends BaseCommand {
     private UserHomeHandler userHomeHandler;
 
     public HomeCommand(Rekeverden plugin)
     {
-        this.userHandler = plugin.getUserHandler();
-        this.userHomeHandler = plugin.getUserHomeHandler();
+      super(plugin.getUserHandler(), User.BUILDER);
+      this.userHomeHandler = plugin.getUserHomeHandler();
     }
 
     @Override
-    public boolean onCommand(CommandSender commandSender, Command command, String label, String[] args) {
-
-        if (!(commandSender instanceof Player)) {
-            commandSender.sendMessage("This command can only be used by Players");
-            return true;
+    public boolean execute(Player player, User user, String[] args, String label) {
+        if (user.isRestricted()) {
+          return true;
         }
 
-        Player player = ((Player) commandSender);
-        User user = this.userHandler.getUser(player.getUniqueId());
-
-        switch (command.getName()) {
+        switch (label) {
             case "delhome": {
-
                 if (args.length > 0) {
                     String theName = args[0];
                     HashMap<String, HomeWaypoint> homes = this.userHomeHandler.getUserHomes(user);

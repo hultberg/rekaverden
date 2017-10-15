@@ -467,7 +467,7 @@ public class UserHandler implements Handler {
       Player p = this.plugin.getServer().getPlayer(user.getUuid());
 
       if (p != null && user.hasAccessLevel(User.MODERATOR)) {
-        p.sendMessage(ChatColor.DARK_RED + "(Adm/Mod) " + ChatColor.RED + message);
+        p.sendMessage(ChatColor.ITALIC + "" + ChatColor.GRAY + "[" + message + "]");
       }
     }
   }
@@ -477,7 +477,7 @@ public class UserHandler implements Handler {
       Player p = this.plugin.getServer().getPlayer(user.getUuid());
 
       if (p != null && user.hasAccessLevel(User.ADMIN)) {
-        p.sendMessage(ChatColor.DARK_RED + "(Adm) " + ChatColor.RED + message);
+        p.sendMessage(ChatColor.ITALIC + "" + ChatColor.GRAY + "[" + message + "]");
       }
     }
   }

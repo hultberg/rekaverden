@@ -1,7 +1,8 @@
 # Changelog
 
-### 1.3.2 (Unreleased)
+### 1.3.2
 
+* Deny /spawn, /tp, /tphere, /group and /home-commands access when user is restricted.
 * Fix possible NullPointerException in player interact event.
 
 ### 1.3.1

@@ -31,6 +31,8 @@ public class GroupCommand implements org.bukkit.command.CommandExecutor {
 
     User user = this.plugin.getUserHandler().getUser(player.getUniqueId());
 
+    if (user.isRestricted()) return true;
+
     if (user.getAccessLevel() < 1) {
       player.sendMessage(ChatColor.RED + "You do not have access to use this command.");
       return true;

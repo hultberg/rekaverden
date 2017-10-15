@@ -17,6 +17,10 @@ public class TeleportCommand extends BaseCommand {
       return false;
     }
 
+    if (user.isRestricted()) {
+      return true;
+    }
+
     Player targetPlayer = Bukkit.getPlayer(args[0]);
     if (targetPlayer == null) {
       player.sendMessage(ChatColor.RED + "Unable to find player " + ChatColor.RESET + args[0] + ChatColor.RED + " on the server.");

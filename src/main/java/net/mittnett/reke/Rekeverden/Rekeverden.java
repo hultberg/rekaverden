@@ -57,7 +57,7 @@ public class Rekeverden extends JavaPlugin {
         this.blockInfoHandler.onEnable();
         this.userHomeHandler.onEnable();
 
-        getCommand("spawn").setExecutor(new SpawnCommand());
+        getCommand("spawn").setExecutor(new SpawnCommand(this.userHandler));
         getCommand("home").setExecutor(new HomeCommand(this));
         getCommand("sethome").setExecutor(new HomeCommand(this));
         getCommand("delhome").setExecutor(new HomeCommand(this));
