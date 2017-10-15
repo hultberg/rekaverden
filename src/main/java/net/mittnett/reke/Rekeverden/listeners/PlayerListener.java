@@ -54,7 +54,6 @@ public class PlayerListener implements org.bukkit.event.Listener {
       this.userHandler.alertAdmins("An exception was thrown during a login of the player: " + pl.getName());
     }
 
-
     this.plugin.getServer().broadcastMessage(
       ChatColor.GRAY + "// " + pl.getDisplayName() + ChatColor.GREEN + " joined the game.");
   }

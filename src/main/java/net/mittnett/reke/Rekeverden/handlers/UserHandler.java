@@ -5,6 +5,7 @@ import net.mittnett.reke.Rekeverden.Rekeverden;
 import net.mittnett.reke.Rekeverden.mysql.SQLSelectResult;
 import org.bukkit.ChatColor;
 import org.bukkit.entity.Player;
+import org.bukkit.permissions.PermissionAttachment;
 import org.bukkit.scoreboard.Scoreboard;
 import org.bukkit.scoreboard.Team;
 
@@ -69,6 +70,7 @@ public class UserHandler implements Handler {
       user = createUser(p.getUniqueId(), p.getName(), User.GUEST);
     }
 
+    this.setPermissions(p);
     this.onlineUsers.add(user);
 
     return user;
@@ -420,6 +422,26 @@ public class UserHandler implements Handler {
     newUser.setAccessLevel(newStatus);
 
     return this.updateUser(newUser);
+  }
+
+  public void setPermissions(Player player) {
+    PermissionAttachment perms = player.addAttachment(this.plugin);
+
+    User user = this.getUser(player.getUniqueId());
+
+    this.setModPermissions(perms, user.hasAccessLevel(User.MODERATOR));
+    this.setAdminPermissions(perms, user.hasAccessLevel(User.ADMIN));
+  }
+
+  private void setModPermissions(PermissionAttachment perms, boolean value) {
+    perms.setPermission("minecraft.command.ban", value);
+    perms.setPermission("minecraft.command.banlist", value);
+    perms.setPermission("minecraft.command.kick", value);
+    perms.setPermission("minecraft.command.pardon", value);
+  }
+
+  private void setAdminPermissions(PermissionAttachment perms, boolean value) {
+    perms.setPermission("worldedit.*", value);
   }
 
   public void alertAdmins(String message) {
