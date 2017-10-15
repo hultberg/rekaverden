@@ -1,5 +1,9 @@
 # Changelog
 
+### 1.3.2 (Unreleased)
+
+* Fix possible NullPointerException in player interact event.
+
 ### 1.3.1
 
 * Added command /restrict, this will restrict a user from building and interacting in-game.

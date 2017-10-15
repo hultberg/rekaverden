@@ -88,13 +88,15 @@ public class PlayerListener implements org.bukkit.event.Listener {
       }
     }
 
-    switch (event.getHand()) {
-      case HAND:
-        this.handInteractEvent(event);
-        break;
+    if (event.getHand() != null) {
+      switch (event.getHand()) {
+        case HAND:
+          this.handInteractEvent(event);
+          break;
 
-      default:
-        break;
+        default:
+          break;
+      }
     }
   }
 
