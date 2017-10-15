@@ -116,6 +116,7 @@ CREATE TABLE `r_users` (
   `nick` varchar(16) NOT NULL,
   `uuid` varchar(150) NOT NULL,
   `access` tinyint(1) NOT NULL DEFAULT '1',
+  `restricted` tinyint(1) NOT NULL DEFAULT 0,
   `groups` varchar(50) NOT NULL DEFAULT '',
   `home` varchar(230) DEFAULT NULL,
   PRIMARY KEY (`uid`),
