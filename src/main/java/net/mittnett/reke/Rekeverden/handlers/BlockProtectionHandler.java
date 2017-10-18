@@ -74,7 +74,7 @@ public class BlockProtectionHandler implements Handler {
             ps.setString(4, world);
 
             if (ps.executeUpdate() < 1) {
-                this.plugin.getLogger().log(Level.INFO, "Unexpected number of rows changed when unprotecting block.");
+               // this.plugin.getLogger().log(Level.INFO, "Unexpected number of rows changed when unprotecting block.");
             }
 
 

@@ -1,6 +1,5 @@
 package net.mittnett.reke.Rekeverden.handlers;
 
-import com.sun.org.apache.xpath.internal.operations.Bool;
 import net.mittnett.reke.Rekeverden.Rekeverden;
 
 import net.mittnett.reke.Rekeverden.mysql.SQLSelectResult;

@@ -76,7 +76,7 @@ public class PlayerListener implements org.bukkit.event.Listener {
   @EventHandler(priority = EventPriority.NORMAL, ignoreCancelled = true)
   public void onPlayerInteract(PlayerInteractEvent event) {
     if (event.getPlayer() != null) {
-      User user = this.plugin.getUserHandler().getUser(event.getPlayer().getUniqueId());
+      User user = this.userHandler.getUser(event.getPlayer().getUniqueId());
 
       if (user != null && !user.isAllowedInteraction()) {
         event.setCancelled(true);
@@ -142,29 +142,35 @@ public class PlayerListener implements org.bukkit.event.Listener {
           if (user.hasAccessLevel(User.MODERATOR)) {
             player.sendMessage(ChatColor.BLUE + "--------- BlockBP ---------");
 
-            ArrayList<String> rows = this.plugin.getBlockInfoHandler().getBlockLog(clickedBlock.getLocation());
-            if (rows.size() > 0) {
-              for (String s : rows) {
-                player.sendMessage(s);
+            new Thread(() -> {
+              ArrayList<String> rows = this.plugin.getBlockInfoHandler().getBlockLog(clickedBlock.getLocation());
+              if (rows.size() > 0) {
+                for (String s : rows) {
+                  player.sendMessage(s);
+                }
+              } else {
+                player.sendMessage("(no log found on this location)");
               }
-            } else {
-              player.sendMessage("(no log found on this location)");
-            }
 
-            User owner = this.plugin.getBlockProtectionHandler().getOwnerUser(clickedBlock.getLocation());
-            player.sendMessage(
-              ChatColor.WHITE + "Owned by: " + ChatColor.BLUE + (owner != null ? owner.getName() : "no owner"));
+              User owner = this.plugin.getBlockProtectionHandler().getOwnerUser(clickedBlock.getLocation());
+              player.sendMessage(
+                ChatColor.WHITE + "Owned by: " + ChatColor.BLUE + (owner != null ? owner.getName() : "no owner"));
 
-            player.sendMessage("");
+              player.sendMessage("");
+            }).start();
           }
           return;
 
         case STICK:
           if (user.hasAccessLevel(User.MODERATOR)) {
             Location l = clickedBlock.getLocation();
-            this.plugin.getBlockProtectionHandler().unProtect(l.getBlockX(), l.getBlockY(), l.getBlockZ(),
-              l.getWorld().getName());
-            this.plugin.getBlockInfoHandler().log(user, l, clickedBlock, BlockAction.ADMIN_STICKED);
+
+            new Thread(() -> {
+              this.plugin.getBlockProtectionHandler().unProtect(l.getBlockX(), l.getBlockY(), l.getBlockZ(),
+                l.getWorld().getName());
+              this.plugin.getBlockInfoHandler().log(user, l, clickedBlock, BlockAction.ADMIN_STICKED);
+            }).start();
+
             clickedBlock.setType(Material.AIR);
           }
           return;

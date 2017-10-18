@@ -2,12 +2,11 @@ package net.mittnett.reke.Rekeverden.listeners;
 
 import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import net.mittnett.reke.Rekeverden.Rekeverden;
-import net.mittnett.reke.Rekeverden.handlers.BlockAction;
-import net.mittnett.reke.Rekeverden.handlers.BlockProtectionHandler;
-import net.mittnett.reke.Rekeverden.handlers.User;
-import net.mittnett.reke.Rekeverden.handlers.UserHandler;
+import net.mittnett.reke.Rekeverden.handlers.*;
 import org.bukkit.ChatColor;
 import org.bukkit.Location;
 import org.bukkit.Material;
@@ -21,14 +20,14 @@ import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.event.block.BlockPlaceEvent;
 
 public class BlockListener implements org.bukkit.event.Listener {
-    private Rekeverden plugin;
     private UserHandler userHandler;
     private BlockProtectionHandler bpHandler;
+    private BlockInfoHandler blockInfoHandler;
 
     public BlockListener(Rekeverden plugin) {
-        this.plugin = plugin;
-        this.userHandler = plugin.getUserHandler();
-        this.bpHandler = plugin.getBlockProtectionHandler();
+      this.userHandler = plugin.getUserHandler();
+      this.bpHandler = plugin.getBlockProtectionHandler();
+      this.blockInfoHandler = plugin.getBlockInfoHandler();
     }
 
     @EventHandler(priority = EventPriority.NORMAL, ignoreCancelled = true)
@@ -53,22 +52,25 @@ public class BlockListener implements org.bukkit.event.Listener {
           return;
         }
 
-        Object localObject;
-        String s;
         if ((block.getType() == Material.SPONGE) && (user.getAccessLevel() > 2)) {
             player.sendMessage(ChatColor.BLUE + "--------- BlockLog ---------");
 
-            ArrayList<String> rows = this.plugin.getBlockInfoHandler().getBlockLog(block.getLocation());
-            if (rows.size() > 0) {
-                for (localObject = rows.iterator(); ((Iterator) localObject).hasNext(); ) {
-                    s = (String) ((Iterator) localObject).next();
-                    player.sendMessage(s);
-                }
-            } else {
-                player.sendMessage("(no log found on this location)");
-            }
+            new Thread(() -> {
+              Object localObject;
+              String s;
 
-            player.sendMessage("");
+              ArrayList<String> rows = this.blockInfoHandler.getBlockLog(block.getLocation());
+              if (rows.size() > 0) {
+                for (localObject = rows.iterator(); ((Iterator) localObject).hasNext(); ) {
+                  s = (String) ((Iterator) localObject).next();
+                  player.sendMessage(s);
+                }
+              } else {
+                player.sendMessage("(no log found on this location)");
+              }
+
+              player.sendMessage("");
+            }).start();
 
 
             event.setCancelled(true);
@@ -85,7 +87,7 @@ public class BlockListener implements org.bukkit.event.Listener {
                 // Validate that the target block is a chest.
                 if ((relativeChest != null) && (relativeChest.getType() == Material.CHEST)) {
                     // Fetch owner, if it is owned and the user is not current. Cancel event.
-                    User owner = this.plugin.getBlockProtectionHandler().getOwnerUser(relativeChest.getLocation());
+                    User owner = this.bpHandler.getOwnerUser(relativeChest.getLocation());
                     if ((owner != null) && (owner.getId() != user.getId())) {
                         event.setCancelled(true);
                         return;
@@ -94,16 +96,16 @@ public class BlockListener implements org.bukkit.event.Listener {
             }
         }
 
-
-        this.plugin.getBlockInfoHandler().log(user
-                .getId(), l
-                .getBlockX(), l
-                .getBlockY(), l
-                .getBlockZ(), l
-                .getWorld().getName(), block
-                .getTypeId(), block
-                .getData(), BlockAction.PLACED);
-
+        new Thread(() -> {
+          this.blockInfoHandler.log(user
+            .getId(), l
+            .getBlockX(), l
+            .getBlockY(), l
+            .getBlockZ(), l
+            .getWorld().getName(), block
+            .getTypeId(), block
+            .getData(), BlockAction.PLACED);
+        }).start();
 
         if ((block.getType() != Material.DIRT) &&
                 (block.getType() != Material.GRASS) &&
@@ -112,7 +114,13 @@ public class BlockListener implements org.bukkit.event.Listener {
                 (block.getType() != Material.WATER) &&
                 (block.getType() != Material.LAVA) &&
                 (block.getType() != Material.AIR)) {
-            this.plugin.getBlockProtectionHandler().protect(user.getId(), l.getBlockX(), l.getBlockY(), l.getBlockZ(), l.getWorld().getName());
+            this.bpHandler.protect(
+              user.getId(),
+              l.getBlockX(),
+              l.getBlockY(),
+              l.getBlockZ(),
+              l.getWorld().getName()
+            );
         }
     }
 
@@ -159,7 +167,7 @@ public class BlockListener implements org.bukkit.event.Listener {
             case BURNING_FURNACE:
                 Sign privateSign = getPrivateSignOfChest(block);
                 if (privateSign != null) {
-                    User ownerOfSign = this.plugin.getBlockProtectionHandler().getOwnerUser(privateSign.getLocation());
+                    User ownerOfSign = this.bpHandler.getOwnerUser(privateSign.getLocation());
                     if ((ownerOfSign != null) && (ownerOfSign.equals(owner)) && (!owner.equals(user))) {
                         event.setCancelled(true);
                         return;
@@ -202,20 +210,28 @@ public class BlockListener implements org.bukkit.event.Listener {
                 return;
             }
 
-        	// Remove protection of this block.
-            this.plugin.getBlockProtectionHandler().unProtect(l.getBlockX(), l.getBlockY(), l.getBlockZ(), l.getWorld().getName());
+        	  // Remove protection of this block.
+            new Thread(() -> {
+              this.bpHandler.unProtect(
+                l.getBlockX(),
+                l.getBlockY(),
+                l.getBlockZ(),
+                l.getWorld().getName()
+              );
+            }).start();
         }
 
-
-        // Log removal of this block.
-        this.plugin.getBlockInfoHandler().log(user
-                .getId(), l
-                .getBlockX(), l
-                .getBlockY(), l
-                .getBlockZ(), l
-                .getWorld().getName(), block
-                .getTypeId(), block
-                .getData(), BlockAction.REMOVED);
+        new Thread(() -> {
+          // Log removal of this block.
+          this.blockInfoHandler.log(user
+            .getId(), l
+            .getBlockX(), l
+            .getBlockY(), l
+            .getBlockZ(), l
+            .getWorld().getName(), block
+            .getTypeId(), block
+            .getData(), BlockAction.REMOVED);
+        }).start();
     }
 
 

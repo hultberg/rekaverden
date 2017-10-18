@@ -1,5 +1,11 @@
 # Changelog
 
+### 1.3.3
+
+* Log block changes in new Threads.
+* Showing blocklog is now done own thread, preventing lag.
+* Remove setting whole Plugin in block listener
+
 ### 1.3.2
 
 * Deny /spawn, /tp, /tphere, /group and /home-commands access when user is restricted.
