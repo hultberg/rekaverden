@@ -1,5 +1,11 @@
 # Changelog
 
+### 1.3.5
+
+* Deny builders to place water and lava.
+* Deny builders placing and removing bedrock.
+* Deny builders to ignite blocks.
+
 ### 1.3.4
 
 * Allow to configure motd.

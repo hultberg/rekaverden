@@ -1,7 +1,9 @@
 package net.mittnett.reke.Rekeverden.listeners;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.Iterator;
+import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -17,6 +19,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.block.BlockBreakEvent;
+import org.bukkit.event.block.BlockIgniteEvent;
 import org.bukkit.event.block.BlockPlaceEvent;
 
 public class BlockListener implements org.bukkit.event.Listener {
@@ -28,6 +31,11 @@ public class BlockListener implements org.bukkit.event.Listener {
       this.userHandler = plugin.getUserHandler();
       this.bpHandler = plugin.getBlockProtectionHandler();
       this.blockInfoHandler = plugin.getBlockInfoHandler();
+    }
+
+    @EventHandler(priority = EventPriority.NORMAL, ignoreCancelled = true)
+    public void onBlockIgnite(BlockIgniteEvent event) {
+      event.setCancelled(true);
     }
 
     @EventHandler(priority = EventPriority.NORMAL, ignoreCancelled = true)
@@ -44,6 +52,16 @@ public class BlockListener implements org.bukkit.event.Listener {
           if (user.isGuest()) {
             this.userHandler.explainDeniedAction(player);
           }
+          return;
+        }
+
+        if (block.getType() == Material.BEDROCK && !user.hasAccessLevel(User.MODERATOR)) {
+          event.setCancelled(true);
+          return;
+        }
+
+        if (!user.hasAccessLevel(User.MODERATOR) && (block.getType() == Material.LAVA || block.getType() == Material.WATER)) {
+          event.setCancelled(true);
           return;
         }
 
@@ -149,8 +167,13 @@ public class BlockListener implements org.bukkit.event.Listener {
             return;
         }
 
-        User owner = this.bpHandler.getOwnerUser(l);
+        if (block.getType() == Material.BEDROCK && !user.hasAccessLevel(User.MODERATOR)) {
+          event.setCancelled(true);
+          return;
+        }
 
+        User owner = this.bpHandler.getOwnerUser(l);
+        HashSet<Block> blocks = new HashSet<>();
 
         switch (block.getType()) {
             case WALL_SIGN:
@@ -159,7 +182,6 @@ public class BlockListener implements org.bukkit.event.Listener {
                     event.setCancelled(true);
                     return;
                 }
-
 
                 break;
             case CHEST:
@@ -193,8 +215,9 @@ public class BlockListener implements org.bukkit.event.Listener {
                         player.sendMessage(ChatColor.RED + "to create a group or invite a user.");
                         event.setCancelled(true);
                         return;
+                    } else if (ownerOfUp != null) {
+                      blocks.add(blockOver);
                     }
-
 
                     break;
             }
@@ -210,28 +233,35 @@ public class BlockListener implements org.bukkit.event.Listener {
                 return;
             }
 
-        	  // Remove protection of this block.
-            new Thread(() -> {
-              this.bpHandler.unProtect(
-                l.getBlockX(),
-                l.getBlockY(),
-                l.getBlockZ(),
-                l.getWorld().getName()
-              );
-            }).start();
+            blocks.add(block);
         }
 
-        new Thread(() -> {
-          // Log removal of this block.
-          this.blockInfoHandler.log(user
-            .getId(), l
-            .getBlockX(), l
-            .getBlockY(), l
-            .getBlockZ(), l
-            .getWorld().getName(), block
-            .getTypeId(), block
-            .getData(), BlockAction.REMOVED);
-        }).start();
+        if (!blocks.isEmpty()) {
+          // Remove protection of this block.
+          new Thread(() -> {
+            for (Block blockToRemove : blocks) {
+              Location locOfBlock = blockToRemove.getLocation();
+
+              this.bpHandler.unProtect(
+                locOfBlock.getBlockX(),
+                locOfBlock.getBlockY(),
+                locOfBlock.getBlockZ(),
+                locOfBlock.getWorld().getName()
+              );
+
+              this.blockInfoHandler.log(
+                user.getId(),
+                locOfBlock.getBlockX(),
+                locOfBlock.getBlockY(),
+                locOfBlock.getBlockZ(),
+                locOfBlock.getWorld().getName(),
+                blockToRemove.getTypeId(),
+                blockToRemove.getData(),
+                BlockAction.REMOVED
+              );
+            }
+          }).start();
+        }
     }
 
 

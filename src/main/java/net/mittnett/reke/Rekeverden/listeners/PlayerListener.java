@@ -108,6 +108,21 @@ public class PlayerListener implements org.bukkit.event.Listener {
   }
 
   private void handInteractEvent(PlayerInteractEvent event) {
+    if (event.getHand() != null && event.getItem() != null) {
+      switch (event.getItem().getType()) {
+        case LAVA_BUCKET:
+        case WATER_BUCKET:
+          User user = this.userHandler.getUser(event.getPlayer().getUniqueId());
+
+          if (user != null && !user.hasAccessLevel(User.MODERATOR)) {
+            event.setCancelled(true);
+            return;
+          }
+
+          break;
+      }
+    }
+
     switch (event.getAction()) {
       case LEFT_CLICK_BLOCK:
         this.handLeftClickBlock(event);
@@ -230,6 +245,10 @@ public class PlayerListener implements org.bukkit.event.Listener {
   }
 
   private void handLeftClickBlock(PlayerInteractEvent event) {
+    Player player = event.getPlayer();
+    Block clickedBlock = event.getClickedBlock();
+    User user = this.plugin.getUserHandler().getUser(player.getUniqueId());
+
     if (event.getItem() != null) {
       switch (event.getItem().getType()) {
         case DIAMOND_PICKAXE:
@@ -256,10 +275,6 @@ public class PlayerListener implements org.bukkit.event.Listener {
           return;
 
         case BOOK:
-          Player player = event.getPlayer();
-          Block clickedBlock = event.getClickedBlock();
-          User user = this.plugin.getUserHandler().getUser(player.getUniqueId());
-
           if ((player.getGameMode() != GameMode.CREATIVE) && (user.hasEnabledSelectTool())) {
             user.setSelectToolPoint1(clickedBlock.getLocation());
             player.sendMessage(
