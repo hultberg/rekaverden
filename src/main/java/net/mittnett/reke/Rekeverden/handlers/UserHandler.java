@@ -2,6 +2,7 @@ package net.mittnett.reke.Rekeverden.handlers;
 
 import net.mittnett.reke.Rekeverden.Rekeverden;
 
+import net.mittnett.reke.Rekeverden.config.Configuration;
 import net.mittnett.reke.Rekeverden.mysql.SQLSelectResult;
 import org.bukkit.ChatColor;
 import org.bukkit.entity.Player;
@@ -21,11 +22,13 @@ public class UserHandler implements Handler {
   private final Rekeverden plugin;
   private Set<User> onlineUsers;
   private Set<User> localCachedUsers;
+  private Configuration config;
 
   public UserHandler(Rekeverden plugin) {
     this.plugin = plugin;
     this.onlineUsers = new HashSet<>();
     this.localCachedUsers = new HashSet<>();
+    this.config = plugin.getConfiguration();
   }
 
   public interface UserComparator {
@@ -67,7 +70,7 @@ public class UserHandler implements Handler {
     if (userExists(p.getUniqueId())) {
       user = getUser(p.getUniqueId(), true);
     } else {
-      user = createUser(p.getUniqueId(), p.getName(), User.GUEST);
+      user = createUser(p.getUniqueId(), p.getName(), this.config.getDefaultAccess());
     }
 
     this.updatePlayerCanPickUp(user);
@@ -94,7 +97,6 @@ public class UserHandler implements Handler {
 
   public User createUser(UUID uuid, String nick, int accessLevel) {
     int newUserId = this.plugin.getMySQLHandler().insert("INSERT INTO `r_users`(`nick`,`uuid`,`access`,`groups`)VALUES('" + nick + "', '" + uuid.toString() + "', " + accessLevel + ", '')");
-
 
     if (newUserId < 1) {
       return null;

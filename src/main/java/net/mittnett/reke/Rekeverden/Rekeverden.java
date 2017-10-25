@@ -178,4 +178,8 @@ public class Rekeverden extends JavaPlugin {
     public UserHomeHandler getUserHomeHandler() {
         return this.userHomeHandler;
     }
+
+    public Configuration getConfiguration() {
+        return this.config;
+    }
 }

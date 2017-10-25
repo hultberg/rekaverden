@@ -3,6 +3,7 @@ package net.mittnett.reke.Rekeverden.listeners;
 import java.util.ArrayList;
 import java.util.logging.Level;
 
+import net.mittnett.reke.Rekeverden.config.Configuration;
 import net.mittnett.reke.Rekeverden.handlers.UserHandler;
 import org.bukkit.ChatColor;
 import org.bukkit.GameMode;
@@ -26,10 +27,12 @@ import net.mittnett.reke.Rekeverden.handlers.User;
 public class PlayerListener implements org.bukkit.event.Listener {
   public Rekeverden plugin;
   private UserHandler userHandler;
+  private Configuration config;
 
   public PlayerListener(Rekeverden instance) {
     this.plugin = instance;
     this.userHandler = instance.getUserHandler();
+    this.config = instance.getConfiguration();
   }
 
   @EventHandler(priority = EventPriority.NORMAL, ignoreCancelled = true)
@@ -41,8 +44,12 @@ public class PlayerListener implements org.bukkit.event.Listener {
     try {
       User user = this.userHandler.loginPlayer(pl);
 
-      pl.sendMessage(ChatColor.GRAY + "|| " + ChatColor.GOLD + "---------- WELCOME TO Rekeverden");
-      pl.sendMessage(ChatColor.GRAY + "|| " + ChatColor.RESET + "Dynmap: http://mc.rekalarsen.no:8123/");
+      //pl.sendMessage(ChatColor.GRAY + "|| " + ChatColor.GOLD + "---------- WELCOME TO Rekeverden");
+      //pl.sendMessage(ChatColor.GRAY + "|| " + ChatColor.RESET + "Dynmap: http://mc.rekalarsen.no:8123/");
+
+      for (String s : this.config.getMotdLines()) {
+        pl.sendMessage(s);
+      }
 
       if (user.getGroupInvites().size() > 0) {
         pl.sendMessage(ChatColor.GRAY + "|| " + ChatColor.DARK_GREEN + "You have " + ChatColor.WHITE

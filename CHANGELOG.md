@@ -1,5 +1,10 @@
 # Changelog
 
+### 1.3.4
+
+* Allow to configure motd.
+* Allow to configure default access level.
+
 ### 1.3.3
 
 * Log block changes in new Threads.
