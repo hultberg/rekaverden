@@ -164,7 +164,7 @@
 /* 139 */             this.ps1.setInt(2, x);
 /* 140 */             this.ps1.setInt(3, y);
 /* 141 */             this.ps1.setInt(4, z);
-/* 142 */             this.ps1.setInt(6, block.getTypeId());
+/* 142 */             this.ps1.setInt(6, block.getType().getId());
 /* 143 */             this.ps1.setInt(7, block.getData());
 /* 144 */             this.ps1.executeUpdate();
 /*     */             

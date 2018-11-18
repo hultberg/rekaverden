@@ -121,7 +121,7 @@ public class BlockListener implements org.bukkit.event.Listener {
             .getBlockY(), l
             .getBlockZ(), l
             .getWorld().getName(), block
-            .getTypeId(), block
+            .getType(), block
             .getData(), BlockAction.PLACED);
         }).start();
 
@@ -186,7 +186,6 @@ public class BlockListener implements org.bukkit.event.Listener {
                 break;
             case CHEST:
             case FURNACE:
-            case BURNING_FURNACE:
                 Sign privateSign = getPrivateSignOfChest(block);
                 if (privateSign != null) {
                     User ownerOfSign = this.bpHandler.getOwnerUser(privateSign.getLocation());
@@ -201,13 +200,13 @@ public class BlockListener implements org.bukkit.event.Listener {
 
         if (blockOver != null) {
             switch (blockOver.getType()) {
-                case RAILS:
                 case POWERED_RAIL:
                 case DETECTOR_RAIL:
                 case ACTIVATOR_RAIL:
                 case FLOWER_POT:
-                case RED_ROSE:
-                case YELLOW_FLOWER:
+                case ROSE_RED:
+                case DANDELION_YELLOW:
+                case DANDELION:
                     User ownerOfUp = this.bpHandler.getOwnerUser(blockOver.getLocation());
                     if ((ownerOfUp != null) && (!user.equals(ownerOfUp)) && (!user.sharesAGroup(ownerOfUp))) {
                         player.sendMessage(ChatColor.RED + "The block over this block is owned by " + ChatColor.WHITE + ownerOfUp.getName() + ChatColor.RED + ".");
@@ -255,7 +254,7 @@ public class BlockListener implements org.bukkit.event.Listener {
                 locOfBlock.getBlockY(),
                 locOfBlock.getBlockZ(),
                 locOfBlock.getWorld().getName(),
-                blockToRemove.getTypeId(),
+                blockToRemove.getType(),
                 blockToRemove.getData(),
                 BlockAction.REMOVED
               );

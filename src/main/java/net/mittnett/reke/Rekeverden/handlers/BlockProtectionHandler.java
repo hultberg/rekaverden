@@ -1,18 +1,32 @@
 package net.mittnett.reke.Rekeverden.handlers;
 
-import net.mittnett.reke.Rekeverden.Rekeverden;
+import net.mittnett.reke.Rekeverden.mysql.JDBCConnectionPool;
+import net.mittnett.reke.Rekeverden.mysql.MySQLConnectionPool;
 import org.bukkit.Location;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.logging.Level;
+import java.util.logging.Logger;
 
 public class BlockProtectionHandler implements Handler {
-    private Rekeverden plugin;
+    private Logger logger;
+    private MySQLConnectionPool connectionPool;
+    private UserHandler userHandler;
+    private String sqlProtect;
+    private String sqlUnprotect;
+    private String sqlGetOwnerInt;
 
-    public BlockProtectionHandler(Rekeverden plugin) {
-        this.plugin = plugin;
+    public BlockProtectionHandler(Logger logger, MySQLConnectionPool connectionPool, UserHandler userHandler) {
+        this.logger = logger;
+        this.connectionPool = connectionPool;
+        this.userHandler = userHandler;
+
+        this.sqlProtect = "REPLACE INTO `r_blocks`(`uid`, `x`, `y`, `z`, `world`)VALUES(?, ?, ?, ?, ?)";
+        this.sqlUnprotect = "DELETE FROM `r_blocks` WHERE `x`=? AND `y`=? AND `z`=? AND `world`=?";
+        this.sqlGetOwnerInt = "SELECT `uid` FROM `r_blocks` WHERE `x`=? AND `y`=? AND `z`=? AND `world`=?";
     }
 
 
@@ -29,8 +43,8 @@ public class BlockProtectionHandler implements Handler {
         PreparedStatement ps = null;
 
         try {
-            conn = this.plugin.getConnection();
-            ps = conn.prepareStatement("REPLACE INTO `r_blocks`(`uid`, `x`, `y`, `z`, `world`)VALUES(?, ?, ?, ?, ?)");
+            conn = this.connectionPool.getConnection();
+            ps = conn.prepareStatement(this.sqlProtect);
             ps.setInt(1, uid);
             ps.setInt(2, x);
             ps.setInt(3, y);
@@ -38,13 +52,13 @@ public class BlockProtectionHandler implements Handler {
             ps.setString(5, world);
 
             if (ps.executeUpdate() < 1) {
-                this.plugin.getLogger().log(Level.INFO, "Unexpected number of rows changed when protecting block.");
+                this.logger.log(Level.INFO, "Unexpected number of rows changed when protecting block.");
             }
 
 
             return true;
         } catch (SQLException e) {
-            this.plugin.getLogger().log(Level.SEVERE, "[Rekeverden] SQL Exception while protecting a block.", e);
+            this.logger.log(Level.SEVERE, "[Rekeverden] SQL Exception while protecting a block.", e);
             return false;
         } finally {
             try {
@@ -55,7 +69,7 @@ public class BlockProtectionHandler implements Handler {
                     conn.close();
                 }
             } catch (SQLException ex) {
-                this.plugin.getLogger().log(Level.SEVERE, "[Rekeverden] SQL Exception (under lukking)", ex);
+                this.logger.log(Level.SEVERE, "[Rekeverden] SQL Exception (under lukking)", ex);
             }
         }
     }
@@ -66,21 +80,21 @@ public class BlockProtectionHandler implements Handler {
         PreparedStatement ps = null;
 
         try {
-            conn = this.plugin.getConnection();
-            ps = conn.prepareStatement("DELETE FROM `r_blocks` WHERE `x`=? AND `y`=? AND `z`=? AND `world`=?");
+            conn = this.connectionPool.getConnection();
+            ps = conn.prepareStatement(this.sqlUnprotect);
             ps.setInt(1, x);
             ps.setInt(2, y);
             ps.setInt(3, z);
             ps.setString(4, world);
 
             if (ps.executeUpdate() < 1) {
-               // this.plugin.getLogger().log(Level.INFO, "Unexpected number of rows changed when unprotecting block.");
+               // this.logger.log(Level.INFO, "Unexpected number of rows changed when unprotecting block.");
             }
 
 
             return true;
         } catch (SQLException e) {
-            this.plugin.getLogger().log(Level.SEVERE, "[Rekeverden] SQL Exception while unprotecting a block.", e);
+            this.logger.log(Level.SEVERE, "[Rekeverden] SQL Exception while unprotecting a block.", e);
             return false;
         } finally {
             try {
@@ -89,35 +103,62 @@ public class BlockProtectionHandler implements Handler {
                 }
                 if (conn != null) {
                     conn.close();
+                  this.connectionPool.removeConnection(conn);
                 }
             } catch (SQLException ex) {
-                this.plugin.getLogger().log(Level.SEVERE, "[Rekeverden] SQL Exception (under lukking)", ex);
+                this.logger.log(Level.SEVERE, "[Rekeverden] SQL Exception (under lukking)", ex);
             }
         }
     }
 
 
     public User getOwnerUser(Location loc) {
-        return getOwnerUser(loc.getBlockX(), loc.getBlockY(), loc.getBlockZ(), loc.getWorld().getName());
+        return this.getOwnerUser(loc.getBlockX(), loc.getBlockY(), loc.getBlockZ(), loc.getWorld().getName());
     }
 
 
     public User getOwnerUser(int x, int y, int z, String world) {
-        int userID = getOwner(x, y, z, world);
+        int userID = this.getOwner(x, y, z, world);
         if (userID < 1) {
             return null;
         }
-        return this.plugin.getUserHandler().getUser(userID);
+        return this.userHandler.getUser(userID);
     }
 
 
-    public int getOwner(Location loc) {
-        return getOwner(loc.getBlockX(), loc.getBlockY(), loc.getBlockZ(), loc.getWorld().getName());
-    }
+    private int getOwner(int x, int y, int z, String world) {
+        Connection conn = null;
+        PreparedStatement ps = null;
+        ResultSet rs = null;
 
+        try {
+          conn = this.connectionPool.getConnection();
+          ps = conn.prepareStatement(this.sqlGetOwnerInt);
+          ps.setInt(1, x);
+          ps.setInt(2, y);
+          ps.setInt(3, z);
+          ps.setString(4, world);
+          rs = ps.executeQuery();
 
-    public int getOwner(int x, int y, int z, String world) {
-        return this.plugin.getMySQLHandler().getColumnInt("SELECT `uid` FROM `r_blocks` WHERE `x`=" + x + " AND `y`=" + y + " AND `z`=" + z + " AND `world`='" + world + "'", "uid");
+          if (rs.first()) {
+            return rs.getInt(1);
+          }
+        } catch (SQLException e) {
+          this.logger.log(Level.SEVERE, "[Rekeverden] Failed to get owner ID because of exception", e);
+        } finally {
+          try {
+            if (ps != null) ps.close();
+            if (rs != null) rs.close();
+            if (conn != null) {
+              conn.close();
+              this.connectionPool.removeConnection(conn);
+            }
+          } catch (SQLException e) {
+            this.logger.log(Level.SEVERE, "[Rekeverden] Failed to get owner ID because of exception during finally", e);
+          }
+        }
+
+        return -1;
     }
 
 

@@ -45,10 +45,12 @@ public class Rekeverden extends JavaPlugin {
             return;
         }
 
+        BlockTypeManager blockTypeManager = new BlockTypeManager(this.log, this.sqlc);
+
         this.userHandler = new UserHandler(this);
         this.groupHandler = new GroupHandler(this);
-        this.bpHandler = new BlockProtectionHandler(this);
-        this.blockInfoHandler = new BlockInfoHandler(this);
+        this.bpHandler = new BlockProtectionHandler(this.log, this.sqlc, this.userHandler);
+        this.blockInfoHandler = new BlockInfoHandler(this.log, this.sqlc, this.userHandler, blockTypeManager);
         this.userHomeHandler = new UserHomeHandler(this);
 
         this.userHandler.onEnable();

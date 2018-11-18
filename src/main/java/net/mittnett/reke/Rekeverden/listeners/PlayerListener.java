@@ -160,7 +160,7 @@ public class PlayerListener implements org.bukkit.event.Listener {
           }
           return;
 
-        case WATCH:
+        case CLOCK:
           if (user.hasAccessLevel(User.MODERATOR)) {
             player.sendMessage(ChatColor.BLUE + "--------- BlockBP ---------");
 
@@ -207,7 +207,6 @@ public class PlayerListener implements org.bukkit.event.Listener {
       switch (clickedBlock.getType()) {
         case CHEST:
         case FURNACE:
-        case BURNING_FURNACE:
         case ENDER_CHEST:
           // Allow admins and mods to open all chests and furnaces
           if (user.hasAccessLevel(User.MODERATOR)) {
@@ -254,23 +253,23 @@ public class PlayerListener implements org.bukkit.event.Listener {
         case DIAMOND_PICKAXE:
         case DIAMOND_AXE:
         case DIAMOND_HOE:
-        case DIAMOND_SPADE:
-        case GOLD_PICKAXE:
-        case GOLD_AXE:
-        case GOLD_SPADE:
-        case GOLD_HOE:
+        case DIAMOND_SHOVEL:
+        case GOLDEN_PICKAXE:
+        case GOLDEN_AXE:
+        case GOLDEN_SHOVEL:
+        case GOLDEN_HOE:
         case IRON_PICKAXE:
         case IRON_AXE:
-        case IRON_SPADE:
+        case IRON_SHOVEL:
         case IRON_HOE:
         case STONE_PICKAXE:
         case STONE_AXE:
-        case STONE_SPADE:
+        case STONE_SHOVEL:
         case STONE_HOE:
-        case WOOD_PICKAXE:
-        case WOOD_AXE:
-        case WOOD_SPADE:
-        case WOOD_HOE:
+        case WOODEN_PICKAXE:
+        case WOODEN_AXE:
+        case WOODEN_SHOVEL:
+        case WOODEN_HOE:
           event.getItem().setDurability((short) 65336);
           return;
 

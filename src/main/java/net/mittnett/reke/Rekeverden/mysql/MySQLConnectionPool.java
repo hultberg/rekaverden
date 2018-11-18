@@ -68,7 +68,13 @@ public class MySQLConnectionPool implements Closeable {
     }
 
     public synchronized void removeConnection(JDBCConnectionPool JDBCCconn) {
-        this.connections.remove(JDBCCconn);
+      this.connections.remove(JDBCCconn);
+    }
+
+    public synchronized void removeConnection(Connection connection) {
+      if (connection instanceof JDBCConnectionPool) {
+        this.connections.remove(connection);
+      }
     }
 
     public synchronized void checkTrueFalse(JDBCConnectionPool JDBCCconn) {
