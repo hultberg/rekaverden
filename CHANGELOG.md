@@ -1,5 +1,10 @@
 # Changelog
 
+## 2.0.0
+
+* Use Paper (formerly PaperSpigot) API.
+* Introduce new block type handling, blocks are now stored in the database.
+
 ### 1.3.5
 
 * Deny builders to place water and lava.
